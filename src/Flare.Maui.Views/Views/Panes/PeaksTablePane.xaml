@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
+             xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
+             x:Class="Flare.Maui.Views.Panes.PeaksTablePane"
+             x:DataType="vm:MainViewModel">
+
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <theme:FlareTheme />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentView.Resources>
+
+    <Border Padding="12">
+        <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+            <Label Text="Peaks" Style="{StaticResource Header}" />
+            <Grid Grid.Row="1" ColumnDefinitions="22,80,*,54,46" ColumnSpacing="6" Padding="6,0">
+                <Label Grid.Column="1" Text="m/z" Style="{StaticResource Caption}" />
+                <Label Grid.Column="2" Text="Formel" Style="{StaticResource Caption}" />
+                <Label Grid.Column="3" Text="Int. %" Style="{StaticResource NumericText}" />
+                <Label Grid.Column="4" Text="Gewicht" Style="{StaticResource NumericText}" />
+            </Grid>
+            <CollectionView Grid.Row="2" ItemsSource="{Binding Spectrum.Peaks}" SelectionMode="Single"
+                            SelectedItem="{Binding Spectrum.SelectedPeakRow}">
+                <CollectionView.EmptyView>
+                    <Label Text="Spektrum auswählen, um Peaks anzuzeigen." Style="{StaticResource Muted}" Margin="0,12,0,0" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PeakRowViewModel">
+                        <Border Style="{StaticResource ListItem}" Padding="6,4">
+                            <Grid ColumnDefinitions="22,80,*,54,46" ColumnSpacing="6" Padding="6,4" MinimumHeightRequest="40">
+                                <BoxView WidthRequest="12" HeightRequest="12" CornerRadius="2" HorizontalOptions="Start"
+                                         VerticalOptions="Center" Color="{Binding ColorHex, Converter={StaticResource HexToColor}}" />
+                                <Label Grid.Column="1" Text="{Binding MzText}" FontSize="12" VerticalOptions="Center"
+                                       FontAttributes="{Binding IsSelected, Converter={StaticResource BoolToBold}}" />
+                                <Label Grid.Column="2" Text="{Binding Formula}" FontSize="12" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                                <Label Grid.Column="3" Text="{Binding IntensityText}" Style="{StaticResource NumericText}" />
+                                <Label Grid.Column="4" Text="{Binding WeightText}" Style="{StaticResource NumericText}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+    </Border>
+</ContentView>

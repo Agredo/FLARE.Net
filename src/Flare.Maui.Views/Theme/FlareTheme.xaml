@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                    xmlns:conv="clr-namespace:Flare.Maui.Views.Converters"
+                    x:Class="Flare.Maui.Views.Theme.FlareTheme">
+
+    <conv:HexToColorConverter x:Key="HexToColor" />
+    <conv:BoolToFontAttributesConverter x:Key="BoolToBold" />
+    <conv:InvertBoolConverter x:Key="InvertBool" />
+    <conv:IsNotNullConverter x:Key="IsNotNull" />
+    <conv:ColormapTypeToMolDrawConverter x:Key="ToMolDrawColormap" />
+
+    <Color x:Key="WindowBackground">#0B1020</Color>
+    <Color x:Key="Panel">#141A2D</Color>
+    <Color x:Key="PanelRaised">#1B243A</Color>
+    <Color x:Key="PanelBorder">#29344D</Color>
+    <Color x:Key="InputBackground">#0F1629</Color>
+    <Color x:Key="ChartBackground">#11182A</Color>
+    <Color x:Key="TextPrimary">#F1F4FC</Color>
+    <Color x:Key="TextMuted">#9AA8C3</Color>
+    <Color x:Key="Accent">#8370F5</Color>
+    <Color x:Key="AccentHover">#9685FF</Color>
+    <Color x:Key="AccentSoft">#282549</Color>
+    <Color x:Key="Success">#55D6A4</Color>
+    <Color x:Key="Danger">#FB7185</Color>
+
+    <Style TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style x:Key="AppTitle" TargetType="Label">
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontSize" Value="21" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CharacterSpacing" Value="1.4" />
+        <Setter Property="VerticalTextAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="Header" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
+    <Style x:Key="Eyebrow" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource TextMuted}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CharacterSpacing" Value="1.1" />
+    </Style>
+    <Style x:Key="Muted" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource TextMuted}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style x:Key="Caption" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource TextMuted}" />
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style x:Key="NumericText" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HorizontalTextAlignment" Value="End" />
+        <Setter Property="VerticalTextAlignment" Value="Center" />
+    </Style>
+    <Style TargetType="Entry">
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="#71809F" />
+        <Setter Property="BackgroundColor" Value="{StaticResource InputBackground}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="MinimumHeightRequest" Value="42" />
+        <Setter Property="ClearButtonVisibility" Value="WhileEditing" />
+    </Style>
+    <Style TargetType="Picker">
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="TitleColor" Value="{StaticResource TextMuted}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource InputBackground}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="MinimumHeightRequest" Value="42" />
+    </Style>
+    <Style TargetType="Editor">
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="#71809F" />
+        <Setter Property="BackgroundColor" Value="{StaticResource InputBackground}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style x:Key="DefaultButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource Accent}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="Padding" Value="14,9" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="MinimumHeightRequest" Value="40" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="BorderColor" Value="Transparent" />
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Property="BackgroundColor" Value="{StaticResource AccentHover}" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="BackgroundColor" Value="{StaticResource Accent}" />
+                            <Setter Property="Scale" Value="0.98" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Focused">
+                        <VisualState.Setters>
+                            <Setter Property="BorderColor" Value="White" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Property="Opacity" Value="0.45" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
+    </Style>
+    <Style TargetType="Button" BasedOn="{StaticResource DefaultButton}" />
+    <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource DefaultButton}">
+        <Setter Property="BackgroundColor" Value="{StaticResource PanelRaised}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="BorderColor" Value="{StaticResource PanelBorder}" />
+        <Setter Property="FontAttributes" Value="None" />
+    </Style>
+    <Style x:Key="QuietButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource TextMuted}" />
+        <Setter Property="BorderColor" Value="Transparent" />
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="MinimumHeightRequest" Value="36" />
+    </Style>
+    <Style x:Key="TabButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource TextMuted}" />
+        <Setter Property="BorderColor" Value="Transparent" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="MinimumHeightRequest" Value="40" />
+    </Style>
+    <Style x:Key="NavigationButton" TargetType="Button" BasedOn="{StaticResource TabButton}">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Padding" Value="2,5" />
+        <Setter Property="MinimumHeightRequest" Value="62" />
+        <Setter Property="HeightRequest" Value="62" />
+        <Setter Property="LineBreakMode" Value="WordWrap" />
+    </Style>
+    <Style x:Key="AtomButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinimumHeightRequest" Value="38" />
+        <Setter Property="MinimumWidthRequest" Value="48" />
+        <Setter Property="Margin" Value="0,0,6,6" />
+        <Setter Property="BorderColor" Value="#80FFFFFF" />
+    </Style>
+    <Style TargetType="Slider">
+        <Setter Property="MinimumTrackColor" Value="{StaticResource Accent}" />
+        <Setter Property="MaximumTrackColor" Value="{StaticResource PanelBorder}" />
+        <Setter Property="ThumbColor" Value="{StaticResource AccentHover}" />
+    </Style>
+    <Style TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource Panel}" />
+        <Setter Property="Stroke" Value="{StaticResource PanelBorder}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="StrokeShape">
+            <RoundRectangle CornerRadius="12" />
+        </Setter>
+    </Style>
+    <Style x:Key="ListItem" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource PanelRaised}" />
+        <Setter Property="Stroke" Value="{StaticResource PanelBorder}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="12,9" />
+        <Setter Property="Margin" Value="0,3" />
+        <Setter Property="StrokeShape">
+            <RoundRectangle CornerRadius="8" />
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

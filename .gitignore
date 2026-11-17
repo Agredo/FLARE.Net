@@ -1,0 +1,45 @@
+# .NET build output
+**/bin/
+**/obj/
+artifacts/
+
+# IDE and user-specific files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test results
+TestResults/
+*.trx
+coverage*.xml
+coverage*.json
+*.coverage
+
+# Native crash dumps
+*.dmp
+
+# Packages and platform outputs
+*.apk
+*.aab
+*.msix
+*.msixupload
+*.appx
+*.appxbundle
+*.appxupload
+*.keystore
+*.jks
+
+# Signing credentials and other local secrets
+.env
+.env.*
+**/*credentials*.txt
+**/secrets*.json
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini

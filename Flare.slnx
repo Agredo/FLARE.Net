@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Flare.Chem/Flare.Chem.csproj" />
+    <Project Path="src/Flare.Cli/Flare.Cli.csproj" />
+    <Project Path="src/Flare.Maui.Services/Flare.Maui.Services.csproj" />
+    <Project Path="src/Flare.Maui.Views/Flare.Maui.Views.csproj" />
+    <Project Path="src/Flare.Maui/Flare.Maui.csproj" />
+    <Project Path="src/Flare.Models/Flare.Models.csproj" />
+    <Project Path="src/Flare.Onnx/Flare.Onnx.csproj" />
+    <Project Path="src/Flare.Rdkit/Flare.Rdkit.csproj" />
+    <Project Path="src/Flare.Services.Abstraction/Flare.Services.Abstraction.csproj" />
+    <Project Path="src/Flare.Services/Flare.Services.csproj" />
+    <Project Path="src/Flare.ViewModels/Flare.ViewModels.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Flare.Onnx.Tests/Flare.Onnx.Tests.csproj" />
+    <Project Path="tests/Flare.ViewModels.Tests/Flare.ViewModels.Tests.csproj" />
+  </Folder>
+</Solution>
+

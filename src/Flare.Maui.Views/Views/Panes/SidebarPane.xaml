@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
+             xmlns:controls="clr-namespace:Flare.Maui.Views.Controls"
+             xmlns:md="clr-namespace:MolDraw.Maui;assembly=MolDraw.Maui"
+             xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
+             x:Class="Flare.Maui.Views.Panes.SidebarPane"
+             x:DataType="vm:MainViewModel">
+
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <theme:FlareTheme />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentView.Resources>
+
+    <ScrollView Padding="0,0,4,0">
+    <VerticalStackLayout Spacing="12">
+
+        <Border>
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Modell" Style="{StaticResource Header}" />
+                <Label Text="{Binding ModelName}" LineBreakMode="MiddleTruncation" />
+                <Button Text="Einstellungen" Style="{StaticResource SecondaryButton}" Clicked="OnSettingsClicked" />
+            </VerticalStackLayout>
+        </Border>
+
+        <Border>
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Kandidat" Style="{StaticResource Header}" />
+                <Label Text="SMILES" Style="{StaticResource Eyebrow}" />
+                <Entry Text="{Binding Smiles}" Placeholder="z. B. CC(=O)Oc1ccccc1C(=O)O" ReturnCommand="{Binding AnalyzeCommand}" />
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="6" RowDefinitions="Auto,Auto">
+                    <Label Text="Formel (optional)" Style="{StaticResource Muted}" />
+                    <Label Grid.Column="1" Text="Addukt" Style="{StaticResource Muted}" />
+                    <Entry Grid.Row="1" Text="{Binding Formula}" Placeholder="aus SMILES" />
+                    <Picker Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Adducts}" SelectedItem="{Binding Adduct}" />
+                </Grid>
+                <Label Text="Precursor m/z (optional)" Style="{StaticResource Muted}" />
+                <Entry Text="{Binding PrecursorMzText}" Placeholder="aus Formel + Addukt" Keyboard="Numeric" />
+                <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
+                    <Button Text="Analysieren" Command="{Binding AnalyzeCommand}" />
+                    <ActivityIndicator Grid.Column="1" IsRunning="{Binding IsBusy}" Color="{StaticResource Accent}"
+                                       WidthRequest="28" HeightRequest="28" Margin="8,0,0,0" />
+                </Grid>
+                <Label Margin="0,4,0,0">
+                    <Label.FormattedText>
+                        <FormattedString>
+                            <Span Text="FLARE-Score: " />
+                            <Span Text="{Binding ScoreText}" FontAttributes="Bold" />
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
+            </VerticalStackLayout>
+        </Border>
+
+        <Border>
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Manuelles Spektrum" Style="{StaticResource Header}" />
+                <Label Text="m/z-Werte (mit ; getrennt)" Style="{StaticResource Muted}" />
+                <Entry Text="{Binding ManualSpectrum.MzValues}" Placeholder="135,0441; 107,0491; 79,0542; 77,0386" />
+                <Label Text="Intensitäten (mit ; getrennt, leer = alle 100)" Style="{StaticResource Muted}" />
+                <Entry Text="{Binding ManualSpectrum.IntensityValues}" Placeholder="10; 100; 15; 30"
+                       ReturnCommand="{Binding AnalyzeManualSpectrumCommand}" />
+                <Label Text="{Binding ManualSpectrum.ErrorMessage}" TextColor="#FF6B6B"
+                       IsVisible="{Binding ManualSpectrum.ErrorMessage, Converter={StaticResource IsNotNull}}" />
+                <Button Text="Als Spektrum analysieren" Command="{Binding AnalyzeManualSpectrumCommand}" Margin="0,4,0,0" />
+                <Label Text="Nutzt SMILES, Formel, Addukt und Precursor aus „Kandidat“." Style="{StaticResource Muted}" />
+            </VerticalStackLayout>
+        </Border>
+
+        <Border>
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Darstellung" Style="{StaticResource Header}" />
+                <Label Text="Normalisierung" Style="{StaticResource Muted}" />
+                <Picker ItemsSource="{Binding Normalizations}" SelectedItem="{Binding Normalization}" />
+                <VerticalStackLayout IsVisible="{Binding IsSoftmax}">
+                    <Label Style="{StaticResource Muted}">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Softmax-Temperatur: " />
+                                <Span Text="{Binding SoftmaxTemperature, StringFormat='{0:0.000}'}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                    <Slider Minimum="0.005" Maximum="0.5" Value="{Binding SoftmaxTemperature}" />
+                </VerticalStackLayout>
+                <Label Style="{StaticResource Muted}">
+                    <Label.FormattedText>
+                        <FormattedString>
+                            <Span Text="Schwellwert (keine Färbung darunter): " />
+                            <Span Text="{Binding HighlightThreshold, StringFormat='{0:0.00}'}" />
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
+                <Slider Minimum="0" Maximum="1" Value="{Binding HighlightThreshold}" />
+                <Label Text="Farbskala" Style="{StaticResource Muted}" />
+                <Picker ItemsSource="{Binding Colormaps}" SelectedItem="{Binding Colormap}" />
+                <controls:ColormapBar Colormap="{Binding Colormap}" Margin="0,4,0,0" />
+                <Grid ColumnDefinitions="*,*">
+                    <Label Text="niedrig" Style="{StaticResource Muted}" />
+                    <Label Grid.Column="1" Text="hoch" Style="{StaticResource Muted}" HorizontalOptions="End" />
+                </Grid>
+            </VerticalStackLayout>
+        </Border>
+
+        <Border x:Name="StructureCard">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Struktur" Style="{StaticResource Header}" />
+                <Label Text="{Binding Structure.Formula, TargetNullValue='Noch keine Struktur geladen'}" Style="{StaticResource Muted}" />
+                <Label Text="{Binding Structure.ErrorMessage}" TextColor="{StaticResource Danger}" />
+                <Border BackgroundColor="{StaticResource ChartBackground}" HeightRequest="300" Padding="0">
+                    <md:MoleculeView Smiles="{Binding Structure.Smiles}"
+                                     AtomWeights="{Binding Structure.AtomWeights}"
+                                     Colormap="{Binding Structure.Colormap, Converter={StaticResource ToMolDrawColormap}}"
+                                     RenderOptions="{StaticResource DarkMolecule}"
+                                     SelectedAtomIndex="{Binding Structure.SelectedAtomIndex}"
+                                     HoveredAtomIndex="{Binding Structure.HoveredAtomIndex}"
+                                     ErrorMessage="{Binding Structure.RenderError}"
+                                     BackgroundColor="Transparent" />
+                </Border>
+                <Label Text="{Binding Structure.RenderError}" TextColor="{StaticResource Danger}" />
+                <Label Text="Tippen: Atom wählen · Hover: Peaks einfärben" Style="{StaticResource Caption}" />
+                <Label Text="Atome" Style="{StaticResource Eyebrow}" Margin="0,4,0,0" />
+                <FlexLayout BindableLayout.ItemsSource="{Binding Structure.Atoms}"
+                            Direction="Row" Wrap="Wrap" JustifyContent="Start">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AtomRowViewModel">
+                            <Button Text="{Binding Label}" Style="{StaticResource AtomButton}"
+                                    FontAttributes="{Binding IsSelected, Converter={StaticResource BoolToBold}}"
+                                    BackgroundColor="{Binding ColorHex, Converter={StaticResource HexToColor}}"
+                                    Command="{Binding Structure.SelectAtomCommand, Source={x:Reference StructureCard}}"
+                                    CommandParameter="{Binding .}"
+                                    ToolTipProperties.Text="{Binding WeightText}" />
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </FlexLayout>
+                <Label Text="Die Atomfarbe entspricht der Färbung in der Struktur." Style="{StaticResource Caption}" />
+            </VerticalStackLayout>
+        </Border>
+
+    </VerticalStackLayout>
+    </ScrollView>
+</ContentView>

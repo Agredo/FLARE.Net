@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flare.Models\Flare.Models.csproj" />
+    <ProjectReference Include="..\Flare.Services.Abstraction\Flare.Services.Abstraction.csproj" />
+  </ItemGroup>
+
+</Project>

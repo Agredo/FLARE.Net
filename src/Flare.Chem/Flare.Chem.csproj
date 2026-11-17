@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Platform neutral: pure managed chemistry (NCDK). Must load on Android/ARM64, so no x64 PE flag. -->
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NCDK" Version="1.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flare.Services.Abstraction\Flare.Services.Abstraction.csproj" />
+  </ItemGroup>
+
+</Project>

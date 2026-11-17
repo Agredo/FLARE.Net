@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
+             xmlns:spectra="clr-namespace:Flare.Models.Spectra;assembly=Flare.Models"
+             xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
+             x:Class="Flare.Maui.Views.Panes.SpectrumListPane"
+             x:DataType="vm:MainViewModel">
+
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <theme:FlareTheme />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentView.Resources>
+
+    <Border Padding="12">
+        <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="10">
+            <Button Text="MGF öffnen …" Command="{Binding OpenSpectrumFileCommand}" />
+            <Label Grid.Row="1" Text="{Binding FileName, TargetNullValue='keine Datei'}" Style="{StaticResource Muted}"
+                   LineBreakMode="TailTruncation" ToolTipProperties.Text="{Binding FileName}" />
+            <Label Grid.Row="2" Text="Spektren" Style="{StaticResource Header}" />
+            <CollectionView Grid.Row="3" ItemsSource="{Binding Spectra}" SelectionMode="Single"
+                            SelectedItem="{Binding SelectedSpectrum}">
+                <CollectionView.EmptyView>
+                    <Label Text="MGF-Datei öffnen, um Spektren zu laden." Style="{StaticResource Muted}" Margin="0,12,0,0" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="spectra:SpectrumRecord">
+                        <Border Style="{StaticResource ListItem}">
+                            <VerticalStackLayout Spacing="5">
+                                <Label Text="{Binding Title}" LineBreakMode="TailTruncation" FontAttributes="Bold" />
+                                <Label Style="{StaticResource Muted}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="m/z " />
+                                            <Span Text="{Binding PrecursorMz, StringFormat='{0:0.0000}'}" />
+                                            <Span Text="  ·  " />
+                                            <Span Text="{Binding PeakCount}" />
+                                            <Span Text=" Peaks" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+    </Border>
+</ContentView>

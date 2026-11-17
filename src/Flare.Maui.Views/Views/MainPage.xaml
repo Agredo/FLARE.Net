@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
+             xmlns:panes="clr-namespace:Flare.Maui.Views.Panes"
+             xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
+             x:Class="Flare.Maui.Views.MainPage"
+             x:DataType="vm:MainViewModel"
+             Title="FLARE"
+             BackgroundColor="{StaticResource WindowBackground}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <theme:FlareTheme />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid x:Name="RootLayout" RowDefinitions="Auto,*,Auto,Auto,Auto" RowSpacing="8" Padding="12">
+
+        <Border Grid.ColumnSpan="2" Padding="16,10">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="FLARE" Style="{StaticResource AppTitle}" />
+                    <Label Text="Spektren verstehen. Strukturen erklären." Style="{StaticResource Muted}" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1" Text="Einstellungen" Style="{StaticResource SecondaryButton}"
+                        Clicked="OnSettingsClicked" VerticalOptions="Center" />
+                <Label Grid.Column="2" Text="SPEKTRUM  ↔  STRUKTUR" Style="{StaticResource Eyebrow}"
+                       VerticalOptions="Center" IsVisible="{OnIdiom Phone=False, Default=True}" />
+            </Grid>
+        </Border>
+
+        <Grid x:Name="WideDesktopLayout" Grid.Row="1" ColumnDefinitions="240,*,360" ColumnSpacing="12">
+            <Grid x:Name="WideSpectraHost" />
+            <Grid x:Name="WideWorkspaceHost" Grid.Column="1" RowDefinitions="*,300" RowSpacing="12">
+                <Grid x:Name="WidePlotHost" />
+                <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Grid x:Name="WidePeaksHost" />
+                    <Grid x:Name="WideRankingHost" Grid.Column="1" />
+                </Grid>
+            </Grid>
+            <Grid x:Name="WideAnalysisHost" Grid.Column="2" />
+        </Grid>
+
+        <Grid x:Name="NarrowDesktopLayout" Grid.Row="1" ColumnDefinitions="220,*" ColumnSpacing="12" IsVisible="False">
+            <Grid x:Name="NarrowSpectraHost" />
+            <Grid x:Name="NarrowWorkspaceHost" Grid.Column="1" />
+        </Grid>
+
+        <Grid x:Name="PhoneLayout" Grid.Row="1" IsVisible="False" />
+
+        <Label Grid.Row="3" Text="{Binding StatusText}" Style="{StaticResource Muted}"
+               LineBreakMode="TailTruncation" ToolTipProperties.Text="{Binding StatusText}" />
+
+        <Border x:Name="PhoneNavigation" Grid.Row="4" Padding="4" StrokeShape="{RoundRectangle CornerRadius=12}" IsVisible="False">
+            <Grid ColumnDefinitions="*,*,*,*,*,*" ColumnSpacing="2">
+                <Button x:Name="Tab0" Style="{StaticResource NavigationButton}" Text="Spektren" Clicked="OnTabClicked" CommandParameter="0" />
+                <Button x:Name="Tab1" Grid.Column="1" Style="{StaticResource NavigationButton}" Text="Spektrum" Clicked="OnTabClicked" CommandParameter="1" />
+                <Button x:Name="Tab2" Grid.Column="2" Style="{StaticResource NavigationButton}" Text="Peaks" Clicked="OnTabClicked" CommandParameter="2" />
+                <Button x:Name="Tab3" Grid.Column="3" Style="{StaticResource NavigationButton}" Text="Ranking" Clicked="OnTabClicked" CommandParameter="3" />
+                <Button x:Name="Tab4" Grid.Column="4" Style="{StaticResource NavigationButton}" Text="Analyse" Clicked="OnTabClicked" CommandParameter="4" />
+                <Button x:Name="Tab5" Grid.Column="5" Style="{StaticResource NavigationButton}" Text="Setup" Clicked="OnTabClicked" CommandParameter="5" />
+            </Grid>
+        </Border>
+
+        <panes:SpectrumListPane x:Name="SpectraPane" Grid.Row="1" />
+        <panes:SpectrumPlotPane x:Name="PlotPane" Grid.Row="1" />
+        <panes:PeaksTablePane x:Name="PeaksPane" Grid.Row="1" />
+        <panes:CandidatesPane x:Name="RankingPane" Grid.Row="1" />
+        <panes:SidebarPane x:Name="AnalysisPane" Grid.Row="1" />
+    </Grid>
+</ContentPage>

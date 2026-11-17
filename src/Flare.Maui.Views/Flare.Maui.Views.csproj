@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Directory.Build.props defaults TargetFramework to net8.0; the SDK only cross-targets when it is empty -->
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>$(MauiWindowsTargetFramework);$(MauiAndroidTargetFramework)</TargetFrameworks>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <MauiXamlInflator>SourceGen</MauiXamlInflator>
+    <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-windows'))">$(MauiWindowsMinVersion)</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion Condition="$(TargetFramework.Contains('-windows'))">$(MauiWindowsMinVersion)</TargetPlatformMinVersion>
+    <!-- RDKit2DotNetStandard is a Windows x64 library; Android builds stay architecture neutral -->
+    <PlatformTarget Condition="$(TargetFramework.Contains('-android'))">AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
+    <PackageReference Include="MolDraw.Maui" Version="0.3.0" />
+    <PackageReference Include="MolDraw.Core" Version="0.3.0" />
+    <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="$(SkiaSharpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flare.ViewModels\Flare.ViewModels.csproj" />
+  </ItemGroup>
+
+</Project>
+

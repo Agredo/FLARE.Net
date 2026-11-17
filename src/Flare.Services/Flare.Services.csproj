@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flare.Onnx\Flare.Onnx.csproj" />
+    <ProjectReference Include="..\Flare.Services.Abstraction\Flare.Services.Abstraction.csproj" />
+  </ItemGroup>
+
+</Project>

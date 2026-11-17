@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Directory.Build.props defaults TargetFramework to net8.0; the SDK only cross-targets when it is empty -->
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>$(MauiWindowsTargetFramework);$(MauiAndroidTargetFramework)</TargetFrameworks>
+    <OutputType Condition="$(TargetFramework.Contains('-windows'))">WinExe</OutputType>
+    <OutputType Condition="$(TargetFramework.Contains('-android'))">Exe</OutputType>
+    <RootNamespace>Flare.Maui</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <MauiXamlInflator>SourceGen</MauiXamlInflator>
+    <ApplicationTitle>FLARE</ApplicationTitle>
+    <ApplicationId>com.flare.maui</ApplicationId>
+    <ApplicationDisplayVersion>0.2.0</ApplicationDisplayVersion>
+    <ApplicationVersion>2</ApplicationVersion>
+    <WindowsPackageType Condition="$(TargetFramework.Contains('-windows'))">None</WindowsPackageType>
+    <!-- RDKit2DotNetStandard ships Windows x64 natives only, so the Windows app is always built as win-x64.
+         On ARM64 Windows it runs through x64 emulation (the x64 .NET runtime lives in C:\Program Files\dotnet\x64). -->
+    <RuntimeIdentifiers Condition="$(TargetFramework.Contains('-windows'))">win-x64</RuntimeIdentifiers>
+    <RuntimeIdentifier Condition="$(TargetFramework.Contains('-windows'))">win-x64</RuntimeIdentifier>
+    <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-windows'))">$(MauiWindowsMinVersion)</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion Condition="$(TargetFramework.Contains('-windows'))">$(MauiWindowsMinVersion)</TargetPlatformMinVersion>
+    <!-- Release builds must yield an installable .apk (not an .aab) -->
+    <AndroidPackageFormats Condition="$(TargetFramework.Contains('-android'))">apk</AndroidPackageFormats>
+    <!-- onnxruntime.aar requires at least API 24 -->
+    <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-android'))">24.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#1A1A2E" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+    <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="$(SkiaSharpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flare.Services\Flare.Services.csproj" />
+    <ProjectReference Include="..\Flare.Chem\Flare.Chem.csproj" />
+    <ProjectReference Include="..\Flare.Maui.Services\Flare.Maui.Services.csproj" />
+    <ProjectReference Include="..\Flare.Maui.Views\Flare.Maui.Views.csproj" />
+  </ItemGroup>
+
+  <!-- RDKit only exists on Windows (the NuGet package ships win-x64 natives only); Android uses the NCDK port -->
+  <ItemGroup Condition="$(TargetFramework.Contains('-windows'))">
+    <ProjectReference Include="..\Flare.Rdkit\Flare.Rdkit.csproj" />
+  </ItemGroup>
+
+  <!-- Ship the exported model next to the executable when it exists (see flare_onnx/README) -->
+  <ItemGroup Condition="$(TargetFramework.Contains('-windows')) And Exists('..\..\..\flare_onnx\flare.onnx')">
+    <None Include="..\..\..\flare_onnx\flare.onnx" Link="flare.onnx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Release APK signing. The keystore and its credentials stay outside the repo and are read from
+       the environment (FLARE_ANDROID_KEYSTORE / _KEY_ALIAS / _STORE_PASS / _KEY_PASS); without them
+       the Release build still succeeds but produces an unsigned package. -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('-android')) And '$(Configuration)' == 'Release' And '$(FLARE_ANDROID_KEYSTORE)' != ''">
+    <AndroidKeyStore>true</AndroidKeyStore>
+    <AndroidSigningKeyStore>$(FLARE_ANDROID_KEYSTORE)</AndroidSigningKeyStore>
+    <AndroidSigningKeyAlias Condition="'$(FLARE_ANDROID_KEY_ALIAS)' != ''">$(FLARE_ANDROID_KEY_ALIAS)</AndroidSigningKeyAlias>
+    <AndroidSigningStorePass Condition="'$(FLARE_ANDROID_STORE_PASS)' != ''">$(FLARE_ANDROID_STORE_PASS)</AndroidSigningStorePass>
+    <AndroidSigningKeyPass Condition="'$(FLARE_ANDROID_KEY_PASS)' != ''">$(FLARE_ANDROID_KEY_PASS)</AndroidSigningKeyPass>
+  </PropertyGroup>
+
+</Project>
+

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
+             xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
+             x:Class="Flare.Maui.Views.Panes.SettingsPane"
+             x:DataType="vm:MainViewModel">
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <theme:FlareTheme />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentView.Resources>
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Padding="18,8" HorizontalOptions="Fill" VerticalOptions="Start">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <VerticalStackLayout Spacing="2">
+                <Label Text="ONNX-Modell" Style="{StaticResource AppTitle}" />
+                <Label Text="Modellpfad und Ladestatus" Style="{StaticResource Muted}" />
+            </VerticalStackLayout>
+            <Button Grid.Column="1" Text="Schließen" Style="{StaticResource SecondaryButton}"
+                    Clicked="OnDismissRequested" VerticalOptions="Center" />
+        </Grid>
+    </Border>
+    <ScrollView Grid.Row="1" VerticalOptions="Start">
+        <VerticalStackLayout Spacing="12" MaximumWidthRequest="760">
+            <Border>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Einstellungen" Style="{StaticResource AppTitle}" />
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="ONNX-Modell" Style="{StaticResource Header}" />
+                        <Label Text="Pfad zum FLARE-Modell. Die Einstellung wird auf diesem Gerät gespeichert."
+                               Style="{StaticResource Muted}" />
+                    </VerticalStackLayout>
+                    <Entry Text="{Binding ModelPathInput}" Placeholder="Pfad zu flare.onnx" />
+                    <FlexLayout Direction="Row" Wrap="Wrap">
+                        <Button Text="Datei auswählen …" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding BrowseModelCommand}" Margin="0,0,8,8" />
+                        <Button Text="Modell laden" Command="{Binding LoadSelectedModelCommand}" Margin="0,0,8,8" />
+                        <Button Text="Standard verwenden" Style="{StaticResource QuietButton}"
+                                Command="{Binding UseDefaultModelCommand}" Margin="0,0,0,8" />
+                    </FlexLayout>
+                    <Label Text="{Binding ModelPathInput}" Style="{StaticResource Caption}" />
+                </VerticalStackLayout>
+            </Border>
+            <Border>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Aktueller Status" Style="{StaticResource Header}" />
+                    <Label Text="{Binding ModelStatusText}" />
+                    <Label Text="{Binding StatusText}" Style="{StaticResource Muted}" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+    </Grid>
+</ContentView>

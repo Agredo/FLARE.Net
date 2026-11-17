@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- RDKit2DotNetStandard ships Windows x64 natives only, so this project must never be referenced by
+       a mobile head. It holds the RDKit-backed reference implementations: the featurizer the NCDK port
+       is differential-tested against, and the RDKit depiction backend used on Windows. -->
+  <ItemGroup>
+    <PackageReference Include="RDKit2DotNetStandard" Version="1.0.42" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flare.Chem\Flare.Chem.csproj" />
+    <ProjectReference Include="..\Flare.Services.Abstraction\Flare.Services.Abstraction.csproj" />
+  </ItemGroup>
+
+</Project>

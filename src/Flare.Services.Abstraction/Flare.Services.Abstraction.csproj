@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flare.Models\Flare.Models.csproj" />
+  </ItemGroup>
+
+</Project>
