@@ -116,6 +116,24 @@ The complete model and tensor specification is in [flare_onnx/ONNX_MODEL.md](fla
 
 Preprocessing merges peaks, filters and normalizes intensities, assigns chemically valid subformulas, adds the precursor representation, and constructs atom features and molecular graphs outside ONNX. The model outputs fine-grained similarities; it does **not** generate structures, SMILES, or spectra. A higher score indicates a better relative match within the same spectrum.
 
+### Why ONNX
+
+ONNX Runtime executes the graph without Python, PyTorch, Lightning, or DGL, so the same ~28 MB artifact can run in the Windows and Android apps and in any other ONNX Runtime host. The graph contains only standard ONNX operators and exposes a small contract of four `float32` inputs and two `float32` outputs with dynamic peak, batch, and atom dimensions. Chemistry-dependent preprocessing stays in managed C# because it relies on RDKit on Windows and NCDK on Android.
+
+### How the model was exported
+
+`flare.onnx` is an export of the published FLARE model, not a retrained or reimplemented network. It was produced from the official checkpoint `pretrained_models/flare.ckpt` in the [original Hugging Face Space](https://huggingface.co/spaces/HassounLab/FLARE/tree/main) with PyTorch 2.2.2's ONNX exporter at opset 17 (IR version 8). The graph combines the spectrum encoder, the GCN molecule encoder, and the FILIP scoring head; the original DGL graph batching was replaced by dense padded adjacency operations, and all MIST preprocessing stays outside the graph. The artifact has 188 standard ONNX nodes, 54 initializers with 6,928,896 `float32` parameters, no custom operator domains, and dynamic axes for peaks (`P`), candidates (`B`), and atoms (`N`). The full export procedure, the equivalent export call, and the artifact properties are documented in [flare_onnx/ONNX_MODEL.md](flare_onnx/ONNX_MODEL.md#provenance-how-the-model-was-exported).
+
+### Validation
+
+The model is checked structurally and numerically:
+
+- It parses as a valid ONNX `ModelProto` (opset 17, IR 8) with the documented inputs, outputs, and dynamic dimensions; every node uses a standard ONNX operator, and ONNX Runtime loads and executes it.
+- `tests/Flare.Onnx.Tests` replays reference data produced by the original Python/DGL pipeline for 40 spectra, each scored against 40 candidates. Peak preprocessing and subformula assignment match exactly, molecule features match dgllife within `1e-6`, and end-to-end scores deviate by at most **1.49e-7** from the original model, with the same top-ranked candidate.
+- A differential suite confirms that the RDKit-free NCDK featurizer produces the same 78-feature atom vectors and edge lists as RDKit.
+
+Reproduce the checks with `dotnet test tests/Flare.Onnx.Tests/Flare.Onnx.Tests.csproj`. Tolerances, the reference data, and the limits of this validation are described in [flare_onnx/ONNX_MODEL.md](flare_onnx/ONNX_MODEL.md#validation).
+
 ## Project structure
 
 ```text
@@ -149,7 +167,7 @@ dotnet test tests/Flare.Onnx.Tests/Flare.Onnx.Tests.csproj
 dotnet test tests/Flare.ViewModels.Tests/Flare.ViewModels.Tests.csproj
 ```
 
-The solution builds Windows and Android application targets. The ONNX tests compare preprocessing, chemistry features, similarity, and end-to-end scores with reference results produced by the original pipeline. See the fixture documentation for the applicable tolerances. No Python installation is required to use the application or run the tests.
+The solution builds Windows and Android application targets. The ONNX tests compare preprocessing, chemistry features, similarity, and end-to-end scores with reference results produced by the original pipeline. See [flare_onnx/ONNX_MODEL.md](flare_onnx/ONNX_MODEL.md#validation) for the applicable tolerances. No Python installation is required to use the application or run the tests.
 
 ## Scope and limitations
 

@@ -1,4 +1,4 @@
-# `flare.onnx` – interface specification
+# `flare.onnx` – provenance, validation, and interface specification
 
 `flare.onnx` is a single ONNX model (opset 17, ~28 MB), included in this repository via Git LFS. It contains the complete FLARE inference graph:
 - the spectrum encoder,
@@ -6,6 +6,124 @@
 - FILIP scoring.
 
 It scores **one spectrum** against a **batch of B candidate molecules**. All preprocessing happens outside the model: peak processing, subformula assignment, and RDKit-compatible atom features. The C# reference implementation is in `src/Flare.Onnx`.
+
+The model is derived from the original FLARE research implementation:
+
+- **Publication:** [FLARE: Fine-grained Learning for Alignment of spectra-molecule REpresentation Enhances Metabolite Annotation — bioRxiv](https://www.biorxiv.org/content/10.64898/2026.01.27.702086v1.full)
+- **Original project and pretrained checkpoint:** [HassounLab/FLARE on Hugging Face Spaces](https://huggingface.co/spaces/HassounLab/FLARE/tree/main)
+
+## Why ONNX
+
+ONNX is used as the deployment format, not as a replacement for the research code:
+
+- **No Python stack at inference time.** The graph runs on [ONNX Runtime](https://onnxruntime.ai/); users do not need Python, PyTorch, Lightning, or DGL. The .NET application consumes it through `Microsoft.ML.OnnxRuntime`.
+- **One portable artifact.** A single ~28 MB file can be shipped with the desktop app, embedded in mobile builds, or loaded at runtime. The same graph can target every ONNX Runtime platform (Windows, Android, Linux, macOS) and execution provider.
+- **Framework decoupling.** The trained encoders and scoring head are frozen in the graph, so changes to the training framework or the original Python code cannot silently change inference behavior.
+- **Standard operators only.** The graph contains no custom or DGL operators (see below), so it is portable across ONNX Runtime versions and providers.
+- **Stable interface.** Named inputs and outputs, `float32` tensors, and three dynamic axes (`peaks`, `batch`, `atoms`) form a small, testable contract that does not depend on Python types or DGL graph objects.
+- **Preprocessing stays in the host.** Peak merging, intensity normalization, subformula assignment, and atom featurization depend on chemistry tooling (RDKit on Windows, NCDK on Android). Keeping them in C# avoids packaging chemistry libraries inside the model and makes the ONNX graph purely numeric.
+
+## Provenance: how the model was exported
+
+`flare.onnx` is an export of the published FLARE model; it was not retrained or reimplemented for this repository. The source of truth is the checkpoint [`pretrained_models/flare.ckpt`](https://huggingface.co/spaces/HassounLab/FLARE/blob/main/pretrained_models/flare.ckpt) from the official Space, produced by the `FilipContrastive` PyTorch Lightning model described in the paper.
+
+The exported graph contains:
+
+- the spectrum encoder (`SpecFormulaTransformer`: per-peak formula MLP followed by a `torch.nn.TransformerEncoder`),
+- the molecule encoder (`MolEnc`: a dgllife GCN over the 78-dimensional atom features, returning node-level embeddings),
+- the FILIP head: L2-normalized peak and atom embeddings, pairwise cosine similarity, and the max/mean reductions that produce `scores`.
+
+All MIST preprocessing and chemistry featurization remain outside the model, in `src/Flare.Onnx`.
+
+### Export procedure
+
+1. Load `flare.ckpt` into the original `FilipContrastive` model and switch it to evaluation mode.
+2. Wrap the spectrum encoder, the molecule encoder, and the FILIP head in one module whose forward pass accepts the four already-preprocessed tensors `spec`, `atoms`, `adj`, and `atom_mask`, and returns `scores` and `similarity`. Because the original molecule encoder consumes DGL batched graphs, the wrapper expresses the same GCN arithmetic on a dense, zero-padded adjacency matrix (`adj @ X @ W`). This removes DGL from the inference path, so the export contains standard ONNX operators only.
+3. Export with `torch.onnx.export` from PyTorch 2.2.2 at opset 17, declaring the peak, batch, and atom dimensions as dynamic axes.
+4. Validate the artifact numerically against the original pipeline (see [Validation](#validation)) and store it through Git LFS; `.gitattributes` maps `flare_onnx/*.onnx` to LFS.
+
+The export call is equivalent to:
+
+```python
+torch.onnx.export(
+    model.eval(),
+    (spec, atoms, adj, atom_mask),
+    "flare.onnx",
+    input_names=["spec", "atoms", "adj", "atom_mask"],
+    output_names=["scores", "similarity"],
+    dynamic_axes={
+        "spec": {0: "peaks"},
+        "atoms": {0: "batch", 1: "atoms"},
+        "adj": {0: "batch", 1: "atoms", 2: "atoms"},
+        "atom_mask": {0: "batch", 1: "atoms"},
+        "scores": {0: "batch"},
+        "similarity": {0: "batch", 1: "peaks", 2: "atoms"},
+    },
+    opset_version=17,
+    do_constant_folding=True,
+)
+```
+
+Here `spec` is `[P, 15]`, `atoms` is `[B, N, 78]`, `adj` is `[B, N, N]`, and `atom_mask` is `[B, N]`; their contents are specified under [Interface](#interface).
+
+### Artifact facts
+
+The following properties describe the checked-in file and can be verified with any ONNX parser:
+
+| Property | Value |
+|---|---|
+| Exporter metadata | `producer_name = pytorch`, `producer_version = 2.2.2` |
+| ONNX IR version | 8 |
+| Default-domain opset | 17 |
+| Graph nodes | 188 |
+| Operator domains | Default ONNX domain only (no custom operators) |
+| Initializers | 54, holding 6,928,896 `float32` parameters (~27.7 MB) |
+| Training-only operators | None (inference graph; no dropout nodes) |
+| Dynamic axes | `peaks` (P), `batch` (B), `atoms` (N) |
+| Fixed widths | 15 spectrum features, 78 atom features, 512-dimensional embeddings |
+
+## Validation
+
+The artifact is validated at three levels.
+
+### 1. Structural validity
+
+- The file parses as an ONNX `ModelProto` with IR version 8 and default-domain opset 17.
+- The graph has exactly the four documented `float32` inputs and two `float32` outputs, with the documented dynamic dimensions and fixed feature widths.
+- Every node uses a standard ONNX operator (`MatMul`, `Gemm`, `Einsum`, `LayerNormalization`, `Softmax`, `ReduceL2`, `ReduceMax`, `ReduceMean`, and similar); no node declares a custom domain, so no proprietary runtime extension is required.
+- ONNX Runtime loads the file and creates an inference session; the repository's end-to-end test exercises this path with `Microsoft.ML.OnnxRuntime`.
+
+### 2. Numerical parity with the original model
+
+`tests/Fixtures/reference.json` was produced by the original Python/DGL pipeline for 40 spectra, each scored against the same 40 candidates. `tests/Flare.Onnx.Tests/ReferenceTests.cs` compares the .NET preprocessing, featurization, and exported model against that data:
+
+| Aspect | Test | Tolerance / result |
+|---|---|---|
+| Peak preprocessing | `ProcessedPeaks_MatchPython` | m/z and intensity equal to 12 decimal places |
+| Subformula assignment and spectrum features | `SubformulaAssignmentAndFeatures_MatchPython` | Identical assigned formulas; bit-exact `float32` features |
+| Molecule featurization | `MoleculeGraphs_MatchDgllife` | Identical atom counts and edge lists; atom features within `1e-6` |
+| End-to-end scores | `EndToEndScores_MatchOriginalModel` | Maximum absolute deviation **1.49e-7** (asserted `< 1e-4`); the top-ranked candidate is unchanged and the true candidate is present |
+| RDKit-free featurizer (supporting check) | `NcdkDifferentialTests` | Exact 78-feature atom vectors, edge lists, and formulas versus RDKit |
+
+The residual score deviation is consistent with `float32` rounding accumulated through the network; it is far below the variation that would indicate a different graph or different weights.
+
+### 3. Runtime contract
+
+- `scores` has shape `[B]` and values in `[-1, 1]`; candidates are ranked by descending score.
+- `similarity` has shape `[B, P, N]` and values in `[-1, 1]`; entries for padded atoms (`atom_mask = 0`) are ignored.
+- Candidate chunking only changes how many molecules share a padded tensor; padded atoms are excluded from scoring through `atom_mask`.
+
+### Reproducing the checks
+
+```sh
+dotnet test tests/Flare.Onnx.Tests/Flare.Onnx.Tests.csproj
+```
+
+### What the validation does and does not establish
+
+The checks establish that the exported graph reproduces the original PyTorch/DGL implementation within `float32` tolerance on the reference set, and that the .NET preprocessing matches the pipeline the model was trained with. They are regression tests, not a benchmark of annotation accuracy: the 40-spectrum fixture and `samples/sample.mgf` are not independent evaluations of model quality. Execution-provider-specific behavior (for example, GPU providers) is not covered by these tests.
+
+## Interface
 
 All tensors are `float32`. The dynamic dimensions are:
 
@@ -111,4 +229,4 @@ Cosine similarity between each L2-normalised peak embedding and each L2-normalis
   - `[M+H]+`, `[M+Na]+`, `[M+K]+`
   - `[M-H2O+H]+`, `[M+H3N+H]+`, `[M]+`, `[M-H4O2+H]+`
   - `[M-H]-`
-- Numerical parity with the original PyTorch/DGL model is verified against `tests/Fixtures/reference.json`; the maximum score deviation is < 2e-7.
+- Numerical parity with the original PyTorch/DGL model is verified against `tests/Fixtures/reference.json`; the maximum observed score deviation is 1.49e-7. See [Validation](#validation).
