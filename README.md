@@ -14,6 +14,7 @@ This repository contains the .NET application, its exported ONNX model, sample d
 - **Linked views:** peak selection, atom selection, highlighting, normalization, and color scales help explore model correspondences.
 - **Desktop and phone layouts:** responsive MAUI views for Windows and Android, with touch-oriented phone navigation.
 - **Configurable model:** choose and load an ONNX model in the app's settings without rebuilding.
+- **German and English UI:** switch languages immediately in **Settings / Einstellungen**; the selection is persisted on the device.
 - **Reusable .NET inference:** the ONNX and chemistry services can also be used outside the UI.
 
 ## Requirements
@@ -54,6 +55,8 @@ On startup, the application looks for the model in this order:
 4. `flare_onnx/flare.onnx` in a parent directory of the executable.
 
 Open **Settings** to browse for a model, inspect its path and load status, load it explicitly, or restore the default model. The model must remain accessible at the selected path.
+
+The interface is available in **German** (the default) and **English**. Select `de` or `en` under **Settings → Language**; all panes update immediately without restarting. The selected language is saved in the app's preferences and restored on the next launch.
 
 ### Analyze a spectrum
 
@@ -133,6 +136,22 @@ The model is checked structurally and numerically:
 - A differential suite confirms that the RDKit-free NCDK featurizer produces the same 78-feature atom vectors and edge lists as RDKit.
 
 Reproduce the checks with `dotnet test tests/Flare.Onnx.Tests/Flare.Onnx.Tests.csproj`. Tolerances, the reference data, and the limits of this validation are described in [flare_onnx/ONNX_MODEL.md](flare_onnx/ONNX_MODEL.md#validation).
+
+### Model size and quantization
+
+The shipped artifact is unquantized `float32`: 6,928,896 parameters at 4 bytes each, no quantization
+operators in the graph, ~27.7 MB. GitHub showing a 133-byte `flare.onnx` means it is displaying the Git LFS
+pointer, not the payload.
+
+Quantization was deliberately not applied. Dynamic or static `int8` quantization would shrink the weights
+roughly fourfold, and `float16` conversion would halve the file, but each variant trades away the numerical
+parity this repository relies on: the current maximum score deviation of 1.49e-7 would no longer hold, and a
+static `int8` variant additionally requires a representative calibration set. Load-time graph optimization,
+which costs nothing, is already active because `Microsoft.ML.OnnxRuntime` uses `ORT_ENABLE_ALL` by default.
+
+Any optimized variant belongs in a separate file so the validated `float32` model stays available as the
+reference, and must be re-validated against the same data. The full option matrix, the trade-offs, and the
+acceptance criteria are in [flare_onnx/ONNX_MODEL.md](flare_onnx/ONNX_MODEL.md#size-and-optimization-options).
 
 ## Project structure
 
