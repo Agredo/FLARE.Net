@@ -15,8 +15,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
-    <PackageReference Include="MolDraw.Maui" Version="0.3.0" />
-    <PackageReference Include="MolDraw.Core" Version="0.3.0" />
+    <PackageReference Include="MolDraw.Maui" Version="0.4.0" />
+    <PackageReference Include="MolDraw.Core" Version="0.4.0" />
     <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="$(SkiaSharpVersion)" />
   </ItemGroup>
 

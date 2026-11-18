@@ -1,21 +1,25 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <!-- RDKit2DotNetStandard ships Windows x64 native DLLs only -->
-    <PlatformTarget>x64</PlatformTarget>
+    <!-- RDKit2DotNetStandard ships Windows x64 native DLLs only. A win-arm64 build has to stay neutral. -->
+    <PlatformTarget Condition="'$(PlatformTarget)' == '' And '$(RuntimeIdentifier)' != 'win-arm64'">x64</PlatformTarget>
     <!-- native DLLs in the package's lib folder trigger MSB3246 -->
     <NoWarn>$(NoWarn);MSB3246</NoWarn>
+    <!-- A single-file publish builds the referenced projects without a RuntimeIdentifier, so their .pri files
+         end up in the RID-less output folder. Keeping every project RID-less as well lets the WinUI PRI merge
+         (WINAPPSDKGENERATEPROJECTPRIFILE) resolve them; without this it fails with PRI175/PRI252. -->
+    <AppendRuntimeIdentifierToOutputPath Condition="'$(PublishSingleFile)' == 'true'">false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
   <!-- MAUI front ends: Windows (full analysis) and Android (depiction only, RDKit has no Android natives) -->
   <PropertyGroup>
-    <MauiVersion>10.0.130</MauiVersion>
-    <SkiaSharpVersion>3.119.4</SkiaSharpVersion>
-    <MauiWindowsTargetFramework>net10.0-windows10.0.19041.0</MauiWindowsTargetFramework>
+    <MauiVersion>11.0.10</MauiVersion>
+    <SkiaSharpVersion>4.156.1</SkiaSharpVersion>
+    <MauiWindowsTargetFramework>net11.0-windows10.0.19041.0</MauiWindowsTargetFramework>
     <MauiWindowsMinVersion>10.0.17763.0</MauiWindowsMinVersion>
-    <MauiAndroidTargetFramework>net10.0-android36.0</MauiAndroidTargetFramework>
+    <MauiAndroidTargetFramework>net11.0-android37.0</MauiAndroidTargetFramework>
   </PropertyGroup>
 </Project>
 

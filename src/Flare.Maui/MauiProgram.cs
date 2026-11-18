@@ -10,7 +10,7 @@ using Flare.ViewModels.Localization;
 using Microsoft.Extensions.Logging;
 using MolDraw.Maui;
 using MolDraw.Core;
-#if WINDOWS
+#if WINDOWS && FLARE_RDKIT
 using Flare.Rdkit;
 #endif
 
@@ -29,9 +29,10 @@ public static class MauiProgram
         // Generic services (Flare.Services)
         builder.Services.AddSingleton<ISpectrumFileService, MgfSpectrumFileService>();
 
-        // RDKit ships Windows x64 natives only, so the chemistry backend is chosen per platform.
+        // RDKit ships Windows x64 natives only, so the chemistry backend is chosen at build time:
+        // win-x64 uses RDKit, everything else (Android, win-arm64) uses the NCDK port.
         // Both featurizers emit bit-identical dgllife features (see NcdkDifferentialTests).
-#if WINDOWS
+#if WINDOWS && FLARE_RDKIT
         builder.Services.AddSingleton<IMoleculeService, RdkitMoleculeService>();
         builder.Services.AddSingleton<IMoleculeFeaturizer, RdkitMoleculeFeaturizer>();
 #else

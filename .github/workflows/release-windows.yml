@@ -1,0 +1,143 @@
+name: Release Windows
+
+# Builds self-contained single-file FLARE executables for Windows x64 and ARM64,
+# smoke-tests them, and publishes them as a GitHub Release.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (without the leading "v")
+        required: true
+        default: '0.1.0'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build:
+    name: Build ${{ matrix.rid }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            architecture: x64
+          - rid: win-arm64
+            architecture: arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # flare.onnx is stored in Git LFS and ships next to the executable
+          lfs: true
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $version = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ inputs.version }}' } else { '${{ github.ref_name }}'.TrimStart('v') }
+          if (-not $version) { throw 'Could not resolve the release version.' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Release version: $version"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '11.0.x'
+
+      - name: Install MAUI workloads
+        run: dotnet workload install maui-windows maui-android --skip-manifest-update
+
+      - name: Publish ${{ matrix.rid }} single-file executable
+        shell: pwsh
+        run: |
+          $out = "artifacts/${{ matrix.rid }}"
+          dotnet publish src/Flare.Maui/Flare.Maui.csproj `
+            -f net11.0-windows10.0.19041.0 `
+            -c Release `
+            -r ${{ matrix.rid }} `
+            -o $out `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=none `
+            -p:DebugSymbols=false `
+            -p:ApplicationDisplayVersion=${{ steps.version.outputs.version }}
+          if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
+          # Native symbol packages still copy their .pdb files into the publish folder
+          Get-ChildItem $out -Filter *.pdb | Remove-Item -Force
+          Get-ChildItem $out | Select-Object Name, Length | Format-Table -AutoSize
+
+      - name: Smoke test ${{ matrix.rid }}
+        shell: pwsh
+        run: |
+          ./scripts/smoke-test-windows.ps1 -ExePath "artifacts/${{ matrix.rid }}/Flare.Maui.exe" -Architecture ${{ matrix.architecture }} -TimeoutSeconds 25
+
+      - name: Package ${{ matrix.rid }}
+        shell: pwsh
+        run: |
+          $out = "artifacts/${{ matrix.rid }}"
+          $zip = "artifacts/FLARE-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip"
+          Compress-Archive -Path "$out/*" -DestinationPath $zip -CompressionLevel Optimal
+          $sizeMb = [math]::Round((Get-Item $zip).Length / 1MB, 1)
+          Write-Host "$zip ($sizeMb MB)"
+
+      - name: Upload ${{ matrix.rid }} artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FLARE-${{ matrix.rid }}
+          path: artifacts/FLARE-*-${{ matrix.rid }}.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $version = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ inputs.version }}' } else { '${{ github.ref_name }}'.TrimStart('v') }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Release version: $version"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: FLARE-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create or update release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "v${{ steps.version.outputs.version }}"
+          $files = Get-ChildItem artifacts -Filter *.zip | ForEach-Object { $_.FullName }
+          if (-not $files) { throw 'No release archives were downloaded.' }
+          gh release view $tag 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Release $tag exists - uploading assets."
+            gh release upload $tag @files --clobber
+          } else {
+            gh release create $tag @files --title "FLARE.Net ${{ steps.version.outputs.version }}" --notes "Self-contained single-file Windows builds of the FLARE desktop application.
+
+          | Asset | Architecture | Notes |
+          | --- | --- | --- |
+          | ``FLARE-${{ steps.version.outputs.version }}-win-x64.zip`` | x64 | Full pipeline (RDKit structures) |
+          | ``FLARE-${{ steps.version.outputs.version }}-win-arm64.zip`` | ARM64 | Native ARM64 build, structures via NCDK |
+
+          Each archive contains ``Flare.Maui.exe`` (self-contained, no .NET installation required) and ``flare.onnx``. Keep both files in the same folder."
+          }
+          if ($LASTEXITCODE -ne 0) { throw "gh release command failed with exit code $LASTEXITCODE." }

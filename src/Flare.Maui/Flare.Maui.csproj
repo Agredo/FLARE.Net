@@ -11,17 +11,27 @@
     <SingleProject>true</SingleProject>
     <ApplicationTitle>FLARE</ApplicationTitle>
     <ApplicationId>com.flare.maui</ApplicationId>
-    <ApplicationDisplayVersion>0.2.0</ApplicationDisplayVersion>
-    <ApplicationVersion>2</ApplicationVersion>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
     <WindowsPackageType Condition="$(TargetFramework.Contains('-windows'))">None</WindowsPackageType>
-    <!-- RDKit2DotNetStandard ships Windows x64 natives only, so the Windows app is always built as win-x64.
-         On ARM64 Windows it runs through x64 emulation (the x64 .NET runtime lives in C:\Program Files\dotnet\x64). -->
-    <RuntimeIdentifiers Condition="$(TargetFramework.Contains('-windows'))">win-x64</RuntimeIdentifiers>
-    <RuntimeIdentifier Condition="$(TargetFramework.Contains('-windows'))">win-x64</RuntimeIdentifier>
+    <!-- A single-file (self-contained) publish has to carry the Windows App SDK runtime itself; a normal
+         build keeps using the framework reference so it stays small and debuggable. -->
+    <WindowsAppSDKSelfContained Condition="$(TargetFramework.Contains('-windows')) And '$(PublishSingleFile)' == 'true'">true</WindowsAppSDKSelfContained>
+    <!-- RDKit2DotNetStandard ships Windows x64 natives only, so the Windows app defaults to win-x64.
+         The RID can be overridden (win-arm64) from the command line for the release pipeline.
+         On ARM64 Windows the x64 build runs through x64 emulation; the native win-arm64 build uses NCDK. -->
+    <RuntimeIdentifiers Condition="$(TargetFramework.Contains('-windows')) And '$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifiers>
+    <RuntimeIdentifier Condition="$(TargetFramework.Contains('-windows')) And '$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <FlareUseRdkit Condition="$(TargetFramework.Contains('-windows')) And '$(FlareUseRdkit)' == '' And '$(RuntimeIdentifier)' == 'win-arm64'">false</FlareUseRdkit>
+    <FlareUseRdkit Condition="$(TargetFramework.Contains('-windows')) And '$(FlareUseRdkit)' == ''">true</FlareUseRdkit>
+    <DefineConstants Condition="'$(FlareUseRdkit)' == 'true'">$(DefineConstants);FLARE_RDKIT</DefineConstants>
     <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-windows'))">$(MauiWindowsMinVersion)</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$(TargetFramework.Contains('-windows'))">$(MauiWindowsMinVersion)</TargetPlatformMinVersion>
     <!-- Release builds must yield an installable .apk (not an .aab) -->
     <AndroidPackageFormats Condition="$(TargetFramework.Contains('-android'))">apk</AndroidPackageFormats>
+    <!-- Directory.Build.props defaults PlatformTarget to x64 for the RDKit natives; Android must stay neutral
+         so the APK can target arm64 as well. -->
+    <PlatformTarget Condition="$(TargetFramework.Contains('-android'))">AnyCPU</PlatformTarget>
     <!-- onnxruntime.aar requires at least API 24 -->
     <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-android'))">24.0</SupportedOSPlatformVersion>
   </PropertyGroup>
@@ -32,7 +42,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="11.0.0" />
     <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="$(SkiaSharpVersion)" />
   </ItemGroup>
 
@@ -43,14 +53,20 @@
     <ProjectReference Include="..\Flare.Maui.Views\Flare.Maui.Views.csproj" />
   </ItemGroup>
 
-  <!-- RDKit only exists on Windows (the NuGet package ships win-x64 natives only); Android uses the NCDK port -->
-  <ItemGroup Condition="$(TargetFramework.Contains('-windows'))">
+  <!-- RDKit only exists for Windows x64 (the NuGet package ships win-x64 natives only); Android and
+       the native win-arm64 build use the NCDK port instead. -->
+  <ItemGroup Condition="$(TargetFramework.Contains('-windows')) And '$(FlareUseRdkit)' == 'true'">
     <ProjectReference Include="..\Flare.Rdkit\Flare.Rdkit.csproj" />
   </ItemGroup>
 
-  <!-- Ship the exported model next to the executable when it exists (see flare_onnx/README) -->
+  <!-- Ship the exported model next to the executable when it exists (see flare_onnx/README).
+       FlareService locates flare.onnx by file path, so it must stay a loose file next to the exe
+       instead of being embedded into the single-file bundle. -->
   <ItemGroup Condition="$(TargetFramework.Contains('-windows')) And Exists('..\..\..\flare_onnx\flare.onnx')">
-    <None Include="..\..\..\flare_onnx\flare.onnx" Link="flare.onnx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\flare_onnx\flare.onnx" Link="flare.onnx"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest"
+          ExcludeFromSingleFile="true" />
   </ItemGroup>
 
   <!-- Release APK signing. The keystore and its credentials stay outside the repo and are read from
