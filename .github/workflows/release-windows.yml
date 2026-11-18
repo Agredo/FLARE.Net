@@ -20,6 +20,8 @@ env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # The release job has no checkout, so gh needs an explicit repository
+  GH_REPO: ${{ github.repository }}
 
 jobs:
   build:
@@ -35,7 +37,7 @@ jobs:
             architecture: arm64
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # flare.onnx is stored in Git LFS and ships next to the executable
           lfs: true
@@ -50,7 +52,7 @@ jobs:
           Write-Host "Release version: $version"
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '11.0.x'
 
@@ -92,7 +94,7 @@ jobs:
           Write-Host "$zip ($sizeMb MB)"
 
       - name: Upload ${{ matrix.rid }} artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: FLARE-${{ matrix.rid }}
           path: artifacts/FLARE-*-${{ matrix.rid }}.zip
@@ -112,7 +114,7 @@ jobs:
           Write-Host "Release version: $version"
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: FLARE-*
           path: artifacts
@@ -124,13 +126,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $tag = "v${{ steps.version.outputs.version }}"
-          $files = Get-ChildItem artifacts -Filter *.zip | ForEach-Object { $_.FullName }
-          if (-not $files) { throw 'No release archives were downloaded.' }
-          gh release view $tag 2>$null
+          $files = @(Get-ChildItem artifacts -Filter *.zip | ForEach-Object { $_.FullName })
+          if ($files.Count -eq 0) { throw 'No release archives were downloaded.' }
+          Write-Host "Assets: $($files -join ', ')"
+
+          gh release view $tag --json tagName -q .tagName *> $null
           if ($LASTEXITCODE -eq 0) {
-            Write-Host "Release $tag exists - uploading assets."
+            Write-Host "Release $tag already exists - replacing the assets."
             gh release upload $tag @files --clobber
-          } else {
+          }
+          else {
+            Write-Host "Creating release $tag."
             gh release create $tag @files --title "FLARE.Net ${{ steps.version.outputs.version }}" --notes "Self-contained single-file Windows builds of the FLARE desktop application.
 
           | Asset | Architecture | Notes |
