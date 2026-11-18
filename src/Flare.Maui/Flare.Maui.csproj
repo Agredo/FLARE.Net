@@ -59,11 +59,13 @@
     <ProjectReference Include="..\Flare.Rdkit\Flare.Rdkit.csproj" />
   </ItemGroup>
 
-  <!-- Ship the exported model next to the executable when it exists (see flare_onnx/README).
-       FlareService locates flare.onnx by file path, so it must stay a loose file next to the exe
-       instead of being embedded into the single-file bundle. -->
-  <ItemGroup Condition="$(TargetFramework.Contains('-windows')) And Exists('..\..\..\flare_onnx\flare.onnx')">
-    <None Include="..\..\..\flare_onnx\flare.onnx" Link="flare.onnx"
+  <!-- Ship the exported model next to the executable (see flare_onnx/ONNX_MODEL.md). FlareService
+       locates flare.onnx by file path, so it must stay a loose file next to the exe instead of being
+       embedded into the single-file bundle. The path must be anchored to this file: a plain relative
+       path resolves against the working directory of some MSBuild hosts. -->
+  <ItemGroup Condition="$(TargetFramework.Contains('-windows'))">
+    <None Include="$(MSBuildThisFileDirectory)..\..\flare_onnx\flare.onnx" Link="flare.onnx"
+          Condition="Exists('$(MSBuildThisFileDirectory)..\..\flare_onnx\flare.onnx')"
           CopyToOutputDirectory="PreserveNewest"
           CopyToPublishDirectory="PreserveNewest"
           ExcludeFromSingleFile="true" />

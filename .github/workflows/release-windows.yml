@@ -77,6 +77,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
           # Native symbol packages still copy their .pdb files into the publish folder
           Get-ChildItem $out -Filter *.pdb | Remove-Item -Force
+          # The model has to ship next to the exe, otherwise the prediction pipeline cannot run
+          if (-not (Test-Path "$out/Flare.Maui.exe")) { throw "Single-file executable missing in $out." }
+          if (-not (Test-Path "$out/flare.onnx")) { throw "flare.onnx missing in $out - check the Git LFS checkout." }
           Get-ChildItem $out | Select-Object Name, Length | Format-Table -AutoSize
 
       - name: Smoke test ${{ matrix.rid }}
