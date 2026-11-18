@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:m="clr-namespace:Flare.Maui.Views.Markup"
              xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
              xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
              x:Class="Flare.Maui.Views.Panes.CandidatesPane"
@@ -16,25 +17,25 @@
 
     <Border Padding="12">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" RowSpacing="8">
-            <Label Text="Kandidaten" Style="{StaticResource Header}" />
+            <Label Text="{m:Translate Candidates}" Style="{StaticResource Header}" />
             <FlexLayout Grid.Row="1" Direction="Row" Wrap="Wrap">
-                <Button Text="Aus MGF" Style="{StaticResource SecondaryButton}" Margin="0,0,6,6"
+                <Button Text="{m:Translate FromMgf}" Style="{StaticResource SecondaryButton}" Margin="0,0,6,6"
                         Command="{Binding UseSpectraSmilesAsCandidatesCommand}" />
                 <Button Text="Ranking" Margin="0,0,0,6" Command="{Binding RankCandidatesCommand}" />
             </FlexLayout>
-            <Label Grid.Row="2" Text="Eine SMILES pro Zeile oder mit ; getrennt" Style="{StaticResource Caption}" />
+            <Label Grid.Row="2" Text="{m:Translate CandidateInputHint}" Style="{StaticResource Caption}" />
             <Editor Grid.Row="3" Text="{Binding Candidates.CandidatesText}" HeightRequest="84" AutoSize="TextChanges"
                     Placeholder="CC(=O)Nc1ccc(O)cc1&#10;NC(=O)Cc1ccc(O)cc1" />
             <HorizontalStackLayout Grid.Row="4" Spacing="8">
                 <CheckBox IsChecked="{Binding Candidates.OnlyMatchingMass}" Color="{StaticResource Accent}" />
-                <Label Text="Nur passende Masse (|Δ m/z| ≤ 0,01)" Style="{StaticResource Muted}"
+                <Label Text="{m:Translate OnlyMatchingMass}" Style="{StaticResource Muted}"
                        VerticalOptions="Center" />
             </HorizontalStackLayout>
             <Label Grid.Row="5" Text="{Binding Candidates.Summary}" FontAttributes="Bold" />
             <CollectionView Grid.Row="6" ItemsSource="{Binding Candidates.Results}" SelectionMode="Single"
                             SelectedItem="{Binding Candidates.SelectedResult}">
                 <CollectionView.EmptyView>
-                    <Label Text="Kandidaten eingeben und Ranking starten." Style="{StaticResource Muted}" Margin="0,8,0,0" />
+                    <Label Text="{m:Translate CandidatesEmpty}" Style="{StaticResource Muted}" Margin="0,8,0,0" />
                 </CollectionView.EmptyView>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="vm:CandidateRowViewModel">

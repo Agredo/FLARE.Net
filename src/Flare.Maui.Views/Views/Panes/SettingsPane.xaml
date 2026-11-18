@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:m="clr-namespace:Flare.Maui.Views.Markup"
              xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
              xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
              x:Class="Flare.Maui.Views.Panes.SettingsPane"
@@ -14,44 +15,68 @@
     </ContentView.Resources>
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0" Padding="18,8" HorizontalOptions="Fill" VerticalOptions="Start">
-        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-            <VerticalStackLayout Spacing="2">
-                <Label Text="ONNX-Modell" Style="{StaticResource AppTitle}" />
-                <Label Text="Modellpfad und Ladestatus" Style="{StaticResource Muted}" />
-            </VerticalStackLayout>
-            <Button Grid.Column="1" Text="Schließen" Style="{StaticResource SecondaryButton}"
-                    Clicked="OnDismissRequested" VerticalOptions="Center" />
-        </Grid>
-    </Border>
-    <ScrollView Grid.Row="1" VerticalOptions="Start">
-        <VerticalStackLayout Spacing="12" MaximumWidthRequest="760">
-            <Border>
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="Einstellungen" Style="{StaticResource AppTitle}" />
-                    <VerticalStackLayout Spacing="4">
-                        <Label Text="ONNX-Modell" Style="{StaticResource Header}" />
-                        <Label Text="Pfad zum FLARE-Modell. Die Einstellung wird auf diesem Gerät gespeichert."
-                               Style="{StaticResource Muted}" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="{m:Translate Settings}" Style="{StaticResource AppTitle}" />
+                    <Label Text="{m:Translate ModelPathStatus}" Style="{StaticResource Muted}" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1" Text="{m:Translate Close}" Style="{StaticResource SecondaryButton}"
+                        Clicked="OnDismissRequested" AutomationId="CloseSettingsButton" VerticalOptions="Center" />
+            </Grid>
+        </Border>
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="12" MaximumWidthRequest="760" Margin="0,0,0,20">
+                <Border>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="{m:Translate Language}" Style="{StaticResource Header}" />
+                        <Label Text="{m:Translate LanguageDescription}" Style="{StaticResource Muted}" />
+                        <FlexLayout Direction="Row" Wrap="Wrap">
+                            <!-- Language names stay in their own language on purpose. -->
+                            <Button Text="Deutsch" AutomationId="LanguageDeButton" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding SelectLanguageCommand}" CommandParameter="de" Margin="0,0,8,8">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding Language}" Value="de">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Accent}" />
+                                        <Setter Property="TextColor" Value="White" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                            <Button Text="English" AutomationId="LanguageEnButton" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding SelectLanguageCommand}" CommandParameter="en" Margin="0,0,0,8">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding Language}" Value="en">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Accent}" />
+                                        <Setter Property="TextColor" Value="White" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </FlexLayout>
+                        <Label Text="{Binding LanguageDisplay}" Style="{StaticResource Muted}" />
                     </VerticalStackLayout>
-                    <Entry Text="{Binding ModelPathInput}" Placeholder="Pfad zu flare.onnx" />
-                    <FlexLayout Direction="Row" Wrap="Wrap">
-                        <Button Text="Datei auswählen …" Style="{StaticResource SecondaryButton}"
-                                Command="{Binding BrowseModelCommand}" Margin="0,0,8,8" />
-                        <Button Text="Modell laden" Command="{Binding LoadSelectedModelCommand}" Margin="0,0,8,8" />
-                        <Button Text="Standard verwenden" Style="{StaticResource QuietButton}"
-                                Command="{Binding UseDefaultModelCommand}" Margin="0,0,0,8" />
-                    </FlexLayout>
-                    <Label Text="{Binding ModelPathInput}" Style="{StaticResource Caption}" />
-                </VerticalStackLayout>
-            </Border>
-            <Border>
-                <VerticalStackLayout Spacing="4">
-                    <Label Text="Aktueller Status" Style="{StaticResource Header}" />
-                    <Label Text="{Binding ModelStatusText}" />
-                    <Label Text="{Binding StatusText}" Style="{StaticResource Muted}" />
-                </VerticalStackLayout>
-            </Border>
-        </VerticalStackLayout>
-    </ScrollView>
+                </Border>
+                <Border>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="{m:Translate OnnxModel}" Style="{StaticResource Header}" />
+                        <Label Text="{m:Translate ModelPathDescription}" Style="{StaticResource Muted}" />
+                        <Entry AutomationId="ModelPathEntry" Text="{Binding ModelPathInput}" Placeholder="{m:Translate ModelPathPlaceholder}" />
+                        <FlexLayout Direction="Row" Wrap="Wrap">
+                            <Button Text="{m:Translate BrowseFile}" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding BrowseModelCommand}" Margin="0,0,8,8" />
+                            <Button Text="{m:Translate LoadModel}" Command="{Binding LoadSelectedModelCommand}" Margin="0,0,8,8" />
+                            <Button Text="{m:Translate UseDefault}" Style="{StaticResource QuietButton}"
+                                    Command="{Binding UseDefaultModelCommand}" Margin="0,0,0,8" />
+                        </FlexLayout>
+                        <Label Text="{Binding ModelPathInput}" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{m:Translate CurrentStatus}" Style="{StaticResource Header}" />
+                        <Label Text="{Binding ModelStatusText}" />
+                        <Label Text="{Binding StatusText}" Style="{StaticResource Muted}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
     </Grid>
 </ContentView>

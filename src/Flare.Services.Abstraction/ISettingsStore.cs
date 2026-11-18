@@ -14,5 +14,6 @@ public static class SettingsKeys
     public const string Colormap = "flare.colormap";
     public const string SoftmaxTemperature = "flare.softmaxTemperature";
     public const string HighlightThreshold = "flare.highlightThreshold";
+    public const string Language = "flare.language";
 }
 

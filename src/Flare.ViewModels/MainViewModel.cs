@@ -8,6 +8,7 @@ using Flare.Models.Plot;
 using Flare.Models.Selection;
 using Flare.Models.Spectra;
 using Flare.Services.Abstraction;
+using Flare.ViewModels.Localization;
 
 namespace Flare.ViewModels;
 
@@ -23,6 +24,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IFilePickerService _filePicker;
     private readonly IDialogService _dialogs;
     private readonly ISettingsStore _settings;
+    private readonly ILocalizationService _localization;
     private readonly SelectionState _selection;
 
     private AnalysisResult? _result;
@@ -43,20 +45,28 @@ public sealed partial class MainViewModel : ObservableObject
         SpectrumViewModel spectrum,
         StructureViewModel structure,
         ManualSpectrumViewModel manualSpectrum,
-        CandidatesViewModel candidates)
+        CandidatesViewModel candidates,
+        ILocalizationService? localization = null)
     {
+        localization ??= new LocalizationService();
         _flare = flare;
         _spectrumFiles = spectrumFiles;
         _molecules = molecules;
         _filePicker = filePicker;
         _dialogs = dialogs;
         _settings = settings;
+        _localization = localization;
+        localization.SetLanguage(settings.Get(SettingsKeys.Language, localization.Language));
         _selection = selection;
         Spectrum = spectrum;
         Structure = structure;
         ManualSpectrum = manualSpectrum;
         Candidates = candidates;
         Candidates.PropertyChanged += OnCandidatesPropertyChanged;
+        Structure.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Structure.Formula)) OnPropertyChanged(nameof(StructureFormula));
+        };
 
         Adducts = flare.SupportedAdducts;
         _normalization = ParseEnum(settings.Get(SettingsKeys.Normalization, ""), HighlightNormalization.GlobalMinMax);
@@ -65,6 +75,9 @@ public sealed partial class MainViewModel : ObservableObject
         _highlightThreshold = Math.Clamp(settings.Get(SettingsKeys.HighlightThreshold, 0.0), 0, 1);
 
         _selection.PropertyChanged += OnSelectionChanged;
+        localization.PropertyChanged += OnLanguageChanged;
+        Language = localization.Language;
+        StatusText = _localization["NoModelLoaded"];
     }
 
     public SpectrumViewModel Spectrum { get; }
@@ -76,8 +89,17 @@ public sealed partial class MainViewModel : ObservableObject
     public IReadOnlyList<string> Adducts { get; }
     public IReadOnlyList<HighlightNormalization> Normalizations { get; } = Enum.GetValues<HighlightNormalization>();
     public IReadOnlyList<ColormapType> Colormaps { get; } = Enum.GetValues<ColormapType>();
+    public string NormalizationDisplay => _localization[$"Normalization{Normalization}"];
+    public ILocalizationService Localization => _localization;
+    public string LanguageDisplay => _localization[Language == "en" ? "English" : "German"];
+    public string DisplayFileName => string.IsNullOrWhiteSpace(FileName) ? _localization["NoFile"] : FileName;
+    public string StructureFormula => string.IsNullOrWhiteSpace(Structure.Formula) ? _localization["NoStructure"] : Structure.Formula;
 
     [ObservableProperty]
+    private string _language = "de";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayFileName))]
     private string? _fileName;
 
     [ObservableProperty]
@@ -131,14 +153,53 @@ public sealed partial class MainViewModel : ObservableObject
     private bool _isBusy;
 
     [ObservableProperty]
-    private string _statusText = "Kein Modell geladen";
+    private string _statusText = Strings.Get("NoModelLoaded");
 
     public bool IsSoftmax => Normalization == HighlightNormalization.Softmax;
     public string ScoreText => Score is float s ? s.ToString("0.000", CultureInfo.InvariantCulture) : "–";
-    public string ModelName => ModelPath is null ? "kein Modell" : Path.GetFileName(ModelPath);
+    public string ModelName => ModelPath is null ? _localization["NoModel"] : Path.GetFileName(ModelPath);
     public string ModelStatusText => IsBusy && ModelPathInput.Trim() != ModelPath
-        ? "Modell wird geladen …"
-        : ModelPath is not null && ModelPath == ModelPathInput.Trim() && _flare.IsModelLoaded ? "Modell ist geladen und bereit." : "Kein gültiges Modell geladen.";
+        ? _localization["ModelLoading"]
+        : ModelPath is not null && ModelPath == ModelPathInput.Trim() && _flare.IsModelLoaded ? _localization["ModelReady"] : _localization["NoValidModel"];
+
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(ILocalizationService.Language)) return;
+        Language = _localization.Language;
+        OnPropertyChanged(nameof(LanguageDisplay));
+        OnPropertyChanged(nameof(DisplayFileName));
+        OnPropertyChanged(nameof(StructureFormula));
+        OnPropertyChanged(nameof(ModelStatusText));
+        OnPropertyChanged(nameof(NormalizationDisplay));
+        OnPropertyChanged(nameof(ManualSpectrum));
+        Candidates.RefreshText();
+        ManualSpectrum.RefreshText();
+        RefreshSpectrumTitles();
+        if (_result is null)
+            StatusText = _flare.IsModelLoaded ? _localization["ModelReady"] : _localization["NoModelLoaded"];
+        else
+            StatusText = string.Format(CultureInfo.CurrentCulture, _localization["AnalysisResult"],
+                _result.Score.ToString("0.000", CultureInfo.InvariantCulture), _result.NumPeaks, _result.NumAtoms);
+        OnPropertyChanged(nameof(ModelName));
+        OnPropertyChanged(nameof(ModelStatusText));
+    }
+
+    private void RefreshSpectrumTitles()
+    {
+        for (int i = 0; i < Spectra.Count; i++)
+            if (Spectra[i].Title is "Manuelles Spektrum" or "Manual spectrum")
+                Spectra[i] = Spectra[i] with { Title = ManualSpectrumViewModel.Title };
+    }
+
+    partial void OnLanguageChanged(string value)
+    {
+        _localization.SetLanguage(value);
+        _settings.Set(SettingsKeys.Language, _localization.Language);
+    }
+
+    [RelayCommand]
+    private void SelectLanguage(string? language)
+        => Language = string.Equals(language, "en", StringComparison.OrdinalIgnoreCase) ? "en" : "de";
 
     /// <summary>Loads the last used or default model. Called once when the main page appears.</summary>
     [RelayCommand]
@@ -149,7 +210,7 @@ public sealed partial class MainViewModel : ObservableObject
         var path = File.Exists(stored) ? stored : _flare.FindDefaultModelPath();
         if (path is null)
         {
-            StatusText = "Kein Modell gefunden – bitte flare.onnx auswählen";
+            StatusText = _localization["NoModelFound"];
             return;
         }
         await LoadModelAsync(path);
@@ -158,7 +219,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRunCommand))]
     private async Task OpenSpectrumFileAsync()
     {
-        var path = await _filePicker.PickFileAsync("Spektrendatei öffnen", _spectrumFiles.SupportedExtensions);
+        var path = await _filePicker.PickFileAsync(_localization["OpenSpectrumFile"], _spectrumFiles.SupportedExtensions);
         if (path is null) return;
         await OpenSpectrumFileAsync(path);
     }
@@ -169,17 +230,17 @@ public sealed partial class MainViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            StatusText = $"Lade {Path.GetFileName(path)} …";
+            StatusText = string.Format(CultureInfo.CurrentCulture, _localization["LoadingFile"], Path.GetFileName(path));
             var spectra = await _spectrumFiles.LoadAsync(path);
             Spectra.Clear();
             foreach (var s in spectra) Spectra.Add(s);
             FileName = Path.GetFileName(path);
-            StatusText = $"{spectra.Count} Spektren geladen";
+            StatusText = string.Format(CultureInfo.CurrentCulture, _localization["SpectraLoaded"], spectra.Count);
         }
         catch (Exception ex)
         {
-            StatusText = "Fehler beim Laden";
-            await _dialogs.ShowErrorAsync("Datei konnte nicht geladen werden", ex.Message);
+            StatusText = _localization["FileLoadError"];
+            await _dialogs.ShowErrorAsync(_localization["FileCouldNotLoad"], ex.Message);
             return;
         }
         finally
@@ -192,7 +253,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRunCommand))]
     private async Task BrowseModelAsync()
     {
-        var path = await _filePicker.PickFileAsync("FLARE ONNX-Modell auswählen", [".onnx"]);
+        var path = await _filePicker.PickFileAsync(_localization["SelectOnnxModel"], [".onnx"]);
         if (path is null) return;
         await LoadModelAsync(path);
         if (_flare.IsModelLoaded && CanAnalyze()) await AnalyzeAsync();
@@ -203,7 +264,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(ModelPathInput))
         {
-            await _dialogs.ShowErrorAsync("Pfad fehlt", "Bitte den Pfad zur ONNX-Datei eingeben oder eine Datei auswählen.");
+            await _dialogs.ShowErrorAsync(_localization["PathMissing"], _localization["PathMissingMessage"]);
             return;
         }
         await LoadModelAsync(ModelPathInput.Trim());
@@ -215,7 +276,7 @@ public sealed partial class MainViewModel : ObservableObject
         var path = _flare.FindDefaultModelPath();
         if (path is null)
         {
-            await _dialogs.ShowErrorAsync("Kein Standardmodell", "Es wurde kein flare.onnx gefunden. Bitte eine ONNX-Datei auswählen.");
+            await _dialogs.ShowErrorAsync(_localization["NoDefaultModel"], _localization["NoDefaultModelMessage"]);
             return;
         }
         await LoadModelAsync(path);
@@ -226,19 +287,19 @@ public sealed partial class MainViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            StatusText = "Lade Modell …";
+            StatusText = _localization["LoadingModel"];
             await _flare.LoadModelAsync(path);
             ModelPath = path;
             ModelPathInput = path;
             _settings.Set(SettingsKeys.ModelPath, path);
-            StatusText = $"Modell geladen: {Path.GetFileName(path)}";
+            StatusText = string.Format(CultureInfo.CurrentCulture, _localization["ModelLoaded"], Path.GetFileName(path));
         }
         catch (Exception ex)
         {
             ModelPathInput = ModelPath ?? "";
-            StatusText = "Modell konnte nicht geladen werden";
-            var message = ex is FileNotFoundException ? $"ONNX-Modell nicht gefunden: {path}" : ex.Message;
-            await _dialogs.ShowErrorAsync("Modell konnte nicht geladen werden", message);
+            StatusText = _localization["ModelLoadFailed"];
+            var message = ex is FileNotFoundException ? string.Format(CultureInfo.CurrentCulture, _localization["ModelNotFound"], path) : ex.Message;
+            await _dialogs.ShowErrorAsync(_localization["ModelLoadFailed"], message);
         }
         finally
         {
@@ -260,14 +321,14 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (!TryParsePrecursor(out var precursor))
         {
-            await _dialogs.ShowErrorAsync("Ungültige Eingabe", $"Precursor m/z '{PrecursorMzText}' ist keine Zahl.");
+            await _dialogs.ShowErrorAsync(_localization["InvalidInput"], string.Format(CultureInfo.CurrentCulture, _localization["PrecursorNotNumber"], PrecursorMzText));
             return;
         }
 
         try
         {
             IsBusy = true;
-            StatusText = "Analysiere …";
+            StatusText = _localization["Analyzing"];
             var request = new AnalysisRequest(spectrum, smiles, Formula, Adduct, precursor);
             var result = await _flare.AnalyzeAsync(request);
             var layout = await Task.Run(() => _molecules.CreateLayout(smiles));
@@ -283,7 +344,7 @@ public sealed partial class MainViewModel : ObservableObject
             Spectrum.SetResult(result);
             Structure.SetMolecule(layout, smiles);
             RecomputeNormalization();
-            StatusText = $"Score {ScoreText} · {result.NumPeaks} Peaks · {result.NumAtoms} Atome";
+            StatusText = string.Format(CultureInfo.CurrentCulture, _localization["AnalysisResult"], ScoreText, result.NumPeaks, result.NumAtoms);
         }
         catch (Exception ex)
         {
@@ -291,8 +352,8 @@ public sealed partial class MainViewModel : ObservableObject
             ClearResult();
             var message = DescribeAnalysisError(ex);
             Structure.SetMolecule(null, smiles, message);
-            StatusText = "Analyse fehlgeschlagen";
-            await _dialogs.ShowErrorAsync("Analyse fehlgeschlagen", message);
+            StatusText = _localization["AnalysisFailed"];
+            await _dialogs.ShowErrorAsync(_localization["AnalysisFailed"], message);
         }
         finally
         {
@@ -312,17 +373,17 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (!ManualSpectrum.TryGetPeaks(out var peaks))
         {
-            await _dialogs.ShowErrorAsync("Ungültiges Spektrum", ManualSpectrum.ErrorMessage ?? "Peaks konnten nicht gelesen werden.");
+            await _dialogs.ShowErrorAsync(_localization["InvalidSpectrum"], ManualSpectrum.ErrorMessage ?? _localization["PeaksReadError"]);
             return;
         }
         if (string.IsNullOrWhiteSpace(Smiles))
         {
-            await _dialogs.ShowErrorAsync("Kein SMILES", "Bitte zuerst ein SMILES für den Kandidaten eingeben.");
+            await _dialogs.ShowErrorAsync(_localization["NoSmiles"], _localization["NoSmilesMessage"]);
             return;
         }
         if (!TryParsePrecursor(out var precursor))
         {
-            await _dialogs.ShowErrorAsync("Ungültige Eingabe", $"Precursor m/z '{PrecursorMzText}' ist keine Zahl.");
+            await _dialogs.ShowErrorAsync(_localization["InvalidInput"], string.Format(CultureInfo.CurrentCulture, _localization["PrecursorNotNumber"], PrecursorMzText));
             return;
         }
 
@@ -334,7 +395,7 @@ public sealed partial class MainViewModel : ObservableObject
         FileName ??= ManualSpectrumViewModel.Title;
         SelectedSpectrum = record;
         if (!_flare.IsModelLoaded)
-            await _dialogs.ShowErrorAsync("Kein Modell", "Bitte zuerst das FLARE-Modell (flare.onnx) auswählen.");
+            await _dialogs.ShowErrorAsync(_localization["NoModelTitle"], _localization["SelectModelFirst"]);
     }
 
     /// <summary>Ranks all candidates against the selected spectrum (FLARE score, highest first).</summary>
@@ -342,14 +403,14 @@ public sealed partial class MainViewModel : ObservableObject
     private async Task RankCandidatesAsync()
     {
         var candidates = Candidates.GetCandidates();
-        string? error = SelectedSpectrum is null ? "Bitte zuerst ein Spektrum auswählen."
-            : candidates.Count == 0 ? "Bitte Kandidaten-SMILES eingeben (eine pro Zeile oder mit ; getrennt)."
-            : !_flare.IsModelLoaded ? "Bitte zuerst das FLARE-Modell (flare.onnx) auswählen."
-            : !TryParsePrecursor(out _) ? $"Precursor m/z '{PrecursorMzText}' ist keine Zahl."
+        string? error = SelectedSpectrum is null ? _localization["SelectSpectrumFirst"]
+            : candidates.Count == 0 ? _localization["EnterCandidates"]
+            : !_flare.IsModelLoaded ? _localization["SelectModelFirst"]
+            : !TryParsePrecursor(out _) ? string.Format(CultureInfo.CurrentCulture, _localization["PrecursorNotNumber"], PrecursorMzText)
             : null;
         if (error != null)
         {
-            await _dialogs.ShowErrorAsync("Ranking nicht möglich", error);
+            await _dialogs.ShowErrorAsync(_localization["RankingNotPossible"], error);
             return;
         }
 
@@ -362,16 +423,16 @@ public sealed partial class MainViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            StatusText = $"Bewerte {candidates.Count} Kandidaten …";
+            StatusText = string.Format(CultureInfo.CurrentCulture, _localization["ScoringCandidates"], candidates.Count);
             var scores = await _flare.RankAsync(new RankingRequest(spectrum, candidates, formula, NullIfBlank(Adduct),
                 precursor ?? spectrum.PrecursorMz));
             Candidates.SetResults(scores, spectrum.Smiles);
-            StatusText = Candidates.Summary ?? "Ranking fertig";
+            StatusText = Candidates.Summary ?? _localization["RankingDone"];
         }
         catch (Exception ex)
         {
-            StatusText = "Ranking fehlgeschlagen";
-            await _dialogs.ShowErrorAsync("Ranking fehlgeschlagen", ex.Message);
+            StatusText = _localization["RankingFailed"];
+            await _dialogs.ShowErrorAsync(_localization["RankingFailed"], ex.Message);
         }
         finally
         {
@@ -514,8 +575,7 @@ public sealed partial class MainViewModel : ObservableObject
             if (e is DllNotFoundException or FileNotFoundException or BadImageFormatException
                 && e.Message.Contains("RDKit", StringComparison.OrdinalIgnoreCase))
             {
-                return "Die FLARE-Analyse benötigt RDKit, das nur für Windows (x64) verfügbar ist. "
-                     + "Auf dieser Plattform lassen sich Moleküle darstellen, aber nicht aus MGF-Daten vorhersagen.";
+                return Strings.Get("RdkitRequired");
             }
         }
 

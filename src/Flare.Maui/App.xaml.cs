@@ -1,4 +1,8 @@
+using Flare.Maui.Services;
 using Flare.Maui.Views;
+using Flare.Services.Abstraction;
+using Flare.Maui.Views.Localization;
+using Flare.ViewModels.Localization;
 
 namespace Flare.Maui;
 
@@ -15,12 +19,16 @@ public partial class App : Application
             e.SetObserved();
         };
         InitializeComponent();
+        var localization = IPlatformApplication.Current!.Services.GetRequiredService<ILocalizationService>();
+        var settings = IPlatformApplication.Current.Services.GetRequiredService<ISettingsStore>();
+        localization.SetLanguage(settings.Get(SettingsKeys.Language, localization.Language));
         _mainPage = mainPage;
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        var window = new Window(_mainPage) { Title = "FLARE – Spektrum ↔ Struktur" };
+        var window = new Window(_mainPage) { Title = $"FLARE – {LocalizationProvider.Current["SpectrumStructure"]}" };
+        LocalizationProvider.LanguageChanged += (_, _) => window.Title = $"FLARE – {LocalizationProvider.Current["SpectrumStructure"]}";
         // The three-column layout needs a desktop-sized window; phones/tablets use the full screen
         if (DeviceInfo.Idiom == DeviceIdiom.Desktop)
         {

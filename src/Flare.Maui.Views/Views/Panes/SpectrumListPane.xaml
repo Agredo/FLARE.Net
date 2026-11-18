@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:m="clr-namespace:Flare.Maui.Views.Markup"
              xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
              xmlns:spectra="clr-namespace:Flare.Models.Spectra;assembly=Flare.Models"
              xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
@@ -17,14 +18,14 @@
 
     <Border Padding="12">
         <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="10">
-            <Button Text="MGF öffnen …" Command="{Binding OpenSpectrumFileCommand}" />
-            <Label Grid.Row="1" Text="{Binding FileName, TargetNullValue='keine Datei'}" Style="{StaticResource Muted}"
+            <Button Text="{m:Translate OpenMgf}" Command="{Binding OpenSpectrumFileCommand}" />
+            <Label Grid.Row="1" Text="{Binding DisplayFileName}" Style="{StaticResource Muted}"
                    LineBreakMode="TailTruncation" ToolTipProperties.Text="{Binding FileName}" />
-            <Label Grid.Row="2" Text="Spektren" Style="{StaticResource Header}" />
+            <Label Grid.Row="2" Text="{m:Translate Spectra}" Style="{StaticResource Header}" />
             <CollectionView Grid.Row="3" ItemsSource="{Binding Spectra}" SelectionMode="Single"
                             SelectedItem="{Binding SelectedSpectrum}">
                 <CollectionView.EmptyView>
-                    <Label Text="MGF-Datei öffnen, um Spektren zu laden." Style="{StaticResource Muted}" Margin="0,12,0,0" />
+                    <Label Text="{m:Translate OpenMgfEmpty}" Style="{StaticResource Muted}" Margin="0,12,0,0" />
                 </CollectionView.EmptyView>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="spectra:SpectrumRecord">
@@ -38,7 +39,7 @@
                                             <Span Text="{Binding PrecursorMz, StringFormat='{0:0.0000}'}" />
                                             <Span Text="  ·  " />
                                             <Span Text="{Binding PeakCount}" />
-                                            <Span Text=" Peaks" />
+                                            <Span Text="{m:Translate PeaksLabel}" />
                                         </FormattedString>
                                     </Label.FormattedText>
                                 </Label>

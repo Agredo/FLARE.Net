@@ -3,9 +3,11 @@ using Flare.Models.Selection;
 using Flare.Rdkit;
 using Flare.Services;
 using Flare.Services.Abstraction;
+using Flare.ViewModels.Localization;
 
 namespace Flare.ViewModels.Tests;
 
+[Collection("Localization")]
 public class ModelSettingsTests
 {
     private sealed class NoPicker : IFilePickerService
@@ -57,12 +59,31 @@ public class ModelSettingsTests
         Assert.Equal("Bitte den Pfad zur ONNX-Datei eingeben oder eine Datei auswählen.", Assert.Single(dialogs.Errors));
     }
 
+    [Fact]
+    public void EnglishLanguage_PersistsAndIsRestoredByNewViewModel()
+    {
+        using var flare = new FlareService(new NcdkMoleculeFeaturizer());
+        var settings = new InMemorySettingsStore();
+        var localization = new LocalizationService();
+        var vm = Create(flare, settings, new SelectionState(), out _, localization);
+
+        vm.Language = "en";
+        using var restoredFlare = new FlareService(new NcdkMoleculeFeaturizer());
+        var restoredLocalization = new LocalizationService();
+        var restored = Create(restoredFlare, settings, new SelectionState(), out _, restoredLocalization);
+
+        Assert.Equal("en", settings.Get(SettingsKeys.Language, "de"));
+        Assert.Equal("en", restored.Language);
+        Assert.Equal("English", restored.LanguageDisplay);
+        Assert.Equal("No valid model loaded.", restored.ModelStatusText);
+    }
+
     private static MainViewModel Create(FlareService flare, ISettingsStore settings, SelectionState selection,
-        out RecordingDialogs dialogs)
+        out RecordingDialogs dialogs, ILocalizationService? localization = null)
     {
         dialogs = new RecordingDialogs();
         return new MainViewModel(flare, new MgfSpectrumFileService(), new RdkitMoleculeService(), new NoPicker(),
             dialogs, settings, selection, new SpectrumViewModel(selection), new StructureViewModel(selection),
-            new ManualSpectrumViewModel(), new CandidatesViewModel());
+            new ManualSpectrumViewModel(), new CandidatesViewModel(), localization);
     }
 }

@@ -6,7 +6,6 @@
     <TargetFrameworks>$(MauiWindowsTargetFramework);$(MauiAndroidTargetFramework)</TargetFrameworks>
     <UseMaui>true</UseMaui>
     <SingleProject>true</SingleProject>
-    <MauiXamlInflator>SourceGen</MauiXamlInflator>
     <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-windows'))">$(MauiWindowsMinVersion)</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$(TargetFramework.Contains('-windows'))">$(MauiWindowsMinVersion)</TargetPlatformMinVersion>
     <!-- RDKit2DotNetStandard is a Windows x64 library; Android builds stay architecture neutral -->

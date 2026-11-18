@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:m="clr-namespace:Flare.Maui.Views.Markup"
              xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
              xmlns:panes="clr-namespace:Flare.Maui.Views.Panes"
              xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
@@ -23,11 +24,11 @@
             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                 <VerticalStackLayout Spacing="2">
                     <Label Text="FLARE" Style="{StaticResource AppTitle}" />
-                    <Label Text="Spektren verstehen. Strukturen erklären." Style="{StaticResource Muted}" />
+                    <Label Text="{m:Translate AppTagline}" Style="{StaticResource Muted}" />
                 </VerticalStackLayout>
-                <Button Grid.Column="1" Text="Einstellungen" Style="{StaticResource SecondaryButton}"
+                <Button Grid.Column="1" AutomationId="SettingsButton" Text="{m:Translate Settings}" Style="{StaticResource SecondaryButton}"
                         Clicked="OnSettingsClicked" VerticalOptions="Center" />
-                <Label Grid.Column="2" Text="SPEKTRUM  ↔  STRUKTUR" Style="{StaticResource Eyebrow}"
+                <Label Grid.Column="2" Text="{m:Translate SpectrumStructure}" Style="{StaticResource Eyebrow}"
                        VerticalOptions="Center" IsVisible="{OnIdiom Phone=False, Default=True}" />
             </Grid>
         </Border>
@@ -56,12 +57,12 @@
 
         <Border x:Name="PhoneNavigation" Grid.Row="4" Padding="4" StrokeShape="{RoundRectangle CornerRadius=12}" IsVisible="False">
             <Grid ColumnDefinitions="*,*,*,*,*,*" ColumnSpacing="2">
-                <Button x:Name="Tab0" Style="{StaticResource NavigationButton}" Text="Spektren" Clicked="OnTabClicked" CommandParameter="0" />
-                <Button x:Name="Tab1" Grid.Column="1" Style="{StaticResource NavigationButton}" Text="Spektrum" Clicked="OnTabClicked" CommandParameter="1" />
+                <Button x:Name="Tab0" Style="{StaticResource NavigationButton}" Text="{m:Translate Spectra}" Clicked="OnTabClicked" CommandParameter="0" />
+                <Button x:Name="Tab1" Grid.Column="1" Style="{StaticResource NavigationButton}" Text="{m:Translate Spectrum}" Clicked="OnTabClicked" CommandParameter="1" />
                 <Button x:Name="Tab2" Grid.Column="2" Style="{StaticResource NavigationButton}" Text="Peaks" Clicked="OnTabClicked" CommandParameter="2" />
                 <Button x:Name="Tab3" Grid.Column="3" Style="{StaticResource NavigationButton}" Text="Ranking" Clicked="OnTabClicked" CommandParameter="3" />
-                <Button x:Name="Tab4" Grid.Column="4" Style="{StaticResource NavigationButton}" Text="Analyse" Clicked="OnTabClicked" CommandParameter="4" />
-                <Button x:Name="Tab5" Grid.Column="5" Style="{StaticResource NavigationButton}" Text="Setup" Clicked="OnTabClicked" CommandParameter="5" />
+                <Button x:Name="Tab4" Grid.Column="4" Style="{StaticResource NavigationButton}" Text="{m:Translate Analysis}" Clicked="OnTabClicked" CommandParameter="4" />
+                <Button x:Name="Tab5" AutomationId="SettingsTab" Grid.Column="5" Style="{StaticResource NavigationButton}" Text="{m:Translate Setup}" Clicked="OnTabClicked" CommandParameter="5" />
             </Grid>
         </Border>
 

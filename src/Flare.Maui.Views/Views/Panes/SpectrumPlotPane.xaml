@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:m="clr-namespace:Flare.Maui.Views.Markup"
              xmlns:vm="clr-namespace:Flare.ViewModels;assembly=Flare.ViewModels"
              xmlns:controls="clr-namespace:Flare.Maui.Views.Controls"
              xmlns:theme="clr-namespace:Flare.Maui.Views.Theme"
@@ -23,16 +24,16 @@
         <Border Grid.Row="1" Padding="8" StrokeShape="{RoundRectangle CornerRadius=10}">
             <VerticalStackLayout Spacing="6">
                 <FlexLayout Direction="Row" Wrap="Wrap">
-                    <Button Text="Zoom zurücksetzen" Style="{StaticResource SecondaryButton}" Margin="0,0,6,6"
+                    <Button Text="{m:Translate ResetZoom}" Style="{StaticResource SecondaryButton}" Margin="0,0,6,6"
                             Command="{Binding Spectrum.ResetZoomCommand}" />
-                    <Button Text="Zum Peak" Style="{StaticResource SecondaryButton}" Margin="0,0,6,6"
+                    <Button Text="{m:Translate ZoomToPeak}" Style="{StaticResource SecondaryButton}" Margin="0,0,6,6"
                             Command="{Binding Spectrum.ZoomToSelectionCommand}" />
-                    <Button Text="Auswahl aufheben" Style="{StaticResource SecondaryButton}" Margin="0,0,0,6"
+                    <Button Text="{m:Translate ClearSelection}" Style="{StaticResource SecondaryButton}" Margin="0,0,0,6"
                             Command="{Binding ClearSelectionCommand}" />
                 </FlexLayout>
-                <Label Text="Klick: Peak wählen · Mausrad: Zoom · Ziehen: verschieben · Doppelklick: Reset"
+                <Label Text="{m:Translate PlotHintDesktop}"
                        Style="{StaticResource Caption}" IsVisible="{OnIdiom Phone=False, Default=True}" />
-                <Label Text="Tippen: Peak wählen · Ziehen: verschieben" Style="{StaticResource Caption}"
+                <Label Text="{m:Translate PlotHintPhone}" Style="{StaticResource Caption}"
                        IsVisible="{OnIdiom Phone=True, Default=False}" />
             </VerticalStackLayout>
         </Border>

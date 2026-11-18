@@ -1,3 +1,4 @@
+using Flare.Maui.Views.Localization;
 using Flare.Models.Plot;
 using Flare.ViewModels;
 using SkiaSharp;
@@ -28,13 +29,13 @@ public static class SpectrumRenderer
     {
         canvas.Clear(theme.Background);
         var t = CreateTransform(width, height, vm.ViewPort);
-        AxisRenderer.Draw(canvas, t, theme, "m/z", "Rel. Intensität (%)");
+        AxisRenderer.Draw(canvas, t, theme, "m/z", LocalizationProvider.Current["RelativeIntensity"]);
 
         using var font = new SKFont(SKTypeface.Default, 11);
         using var textPaint = new SKPaint { Color = theme.Text, IsAntialias = true };
         if (vm.RawPeaks.Count == 0)
         {
-            canvas.DrawText("Keine Peaks – MGF-Datei öffnen", width / 2, height / 2, SKTextAlign.Center, font, textPaint);
+            canvas.DrawText(LocalizationProvider.Current["NoPeaksOpenMgf"], width / 2, height / 2, SKTextAlign.Center, font, textPaint);
             return;
         }
 

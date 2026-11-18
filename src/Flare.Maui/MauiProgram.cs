@@ -1,10 +1,12 @@
 using Flare.Chem;
 using Flare.Maui.Services;
 using Flare.Maui.Views;
+using Flare.Maui.Views.Localization;
 using Flare.Models.Selection;
 using Flare.Services;
 using Flare.Services.Abstraction;
 using Flare.ViewModels;
+using Flare.ViewModels.Localization;
 using Microsoft.Extensions.Logging;
 using MolDraw.Maui;
 using MolDraw.Core;
@@ -42,6 +44,14 @@ public static class MauiProgram
         builder.Services.AddSingleton<IFilePickerService, MauiFilePickerService>();
         builder.Services.AddSingleton<IDialogService, MauiDialogService>();
         builder.Services.AddSingleton<ISettingsStore, PreferencesSettingsStore>();
+        builder.Services.AddSingleton<ILocalizationService>(serviceProvider =>
+        {
+            var localization = new LocalizationService();
+            var settings = serviceProvider.GetRequiredService<ISettingsStore>();
+            localization.SetLanguage(settings.Get(SettingsKeys.Language, localization.Language));
+            LocalizationProvider.Current = localization;
+            return localization;
+        });
 
         // Shared selection between spectrum and structure
         builder.Services.AddSingleton<SelectionState>();

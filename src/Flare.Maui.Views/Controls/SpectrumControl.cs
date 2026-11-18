@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Flare.Maui.Views.Localization;
 using Flare.Maui.Views.Rendering;
 using Flare.ViewModels;
 using SkiaSharp;
@@ -31,6 +32,7 @@ public sealed class SpectrumControl : ContentView
         _canvas = new SKCanvasView { IgnorePixelScaling = true, EnableTouchEvents = true };
         _canvas.PaintSurface += OnPaintSurface;
         _canvas.Touch += OnTouch;
+        LocalizationProvider.LanguageChanged += (_, _) => _canvas.InvalidateSurface();
         Content = _canvas;
     }
 
