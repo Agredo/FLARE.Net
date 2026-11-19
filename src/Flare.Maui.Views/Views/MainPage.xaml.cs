@@ -20,6 +20,7 @@ public partial class MainPage : ContentPage
     private readonly Button[] _tabs;
     private readonly View[] _analysisPanes;
     private readonly SettingsPage _settingsPage;
+    private readonly HelpPage _helpPage;
     private LayoutKind? _layout;
     private bool _initialized;
     private int _selectedTab;
@@ -37,6 +38,11 @@ public partial class MainPage : ContentPage
         Grid.SetRow(_settingsPage, 2);
         Grid.SetColumnSpan(_settingsPage, 2);
         _settingsPage.IsVisible = false;
+        _helpPage = HelpPage.Create(BindingContext, CloseHelp);
+        RootLayout.Children.Add(_helpPage);
+        Grid.SetRow(_helpPage, 2);
+        Grid.SetColumnSpan(_helpPage, 2);
+        _helpPage.IsVisible = false;
         AnalysisPane.SettingsRequested += (_, _) => OpenSettings();
         SizeChanged += (_, _) => ApplyLayout();
     }
@@ -69,12 +75,12 @@ public partial class MainPage : ContentPage
         if (_layout != layout)
         {
             _layout = layout;
-            WideDesktopLayout.IsVisible = layout == LayoutKind.WideDesktop;
-            NarrowDesktopLayout.IsVisible = layout == LayoutKind.NarrowDesktop;
-            PhoneLayout.IsVisible = layout == LayoutKind.Compact;
-            PhoneNavigation.IsVisible = layout != LayoutKind.WideDesktop;
+            SelectTab(_selectedTab);
         }
-        SelectTab(_selectedTab);
+        WideDesktopLayout.IsVisible = layout == LayoutKind.WideDesktop;
+        NarrowDesktopLayout.IsVisible = layout == LayoutKind.NarrowDesktop;
+        PhoneLayout.IsVisible = layout == LayoutKind.Compact;
+        PhoneNavigation.IsVisible = layout != LayoutKind.WideDesktop;
     }
 
     private static void MoveTo(Grid host, View child)
@@ -95,6 +101,7 @@ public partial class MainPage : ContentPage
 
     private void OpenSettings()
     {
+        CloseHelp(_helpPage);
         WideDesktopLayout.IsVisible = false;
         NarrowDesktopLayout.IsVisible = false;
         PhoneLayout.IsVisible = false;
@@ -111,7 +118,7 @@ public partial class MainPage : ContentPage
         settings.IsVisible = false;
         RootLayout.RowDefinitions[1].Height = GridLength.Star;
         RootLayout.RowDefinitions[2].Height = GridLength.Auto;
-        if (!_settingsPage.IsVisible) ApplyLayout();
+        if (!_helpPage.IsVisible) ApplyLayout();
         UpdateTabs();
     }
 
@@ -119,6 +126,34 @@ public partial class MainPage : ContentPage
     {
         if (_settingsPage.IsVisible) CloseSettings(_settingsPage);
         else OpenSettings();
+    }
+
+    private void OpenHelp()
+    {
+        if (_settingsPage.IsVisible) _settingsPage.IsVisible = false;
+        WideDesktopLayout.IsVisible = false;
+        NarrowDesktopLayout.IsVisible = false;
+        PhoneLayout.IsVisible = false;
+        PhoneNavigation.IsVisible = false;
+        _helpPage.IsVisible = true;
+        RootLayout.RowDefinitions[1].Height = GridLength.Auto;
+        RootLayout.RowDefinitions[2].Height = GridLength.Star;
+        UpdateTabs();
+    }
+
+    private void CloseHelp(HelpPage help)
+    {
+        if (!help.IsVisible) return;
+        help.IsVisible = false;
+        RootLayout.RowDefinitions[1].Height = GridLength.Star;
+        RootLayout.RowDefinitions[2].Height = GridLength.Auto;
+        if (!_settingsPage.IsVisible) ApplyLayout();
+    }
+
+    private void OnHelpClicked(object? sender, EventArgs e)
+    {
+        if (_helpPage.IsVisible) CloseHelp(_helpPage);
+        else OpenHelp();
     }
 
     private void SelectTab(int index)

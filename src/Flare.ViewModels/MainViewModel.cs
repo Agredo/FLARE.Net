@@ -69,6 +69,10 @@ public sealed partial class MainViewModel : ObservableObject
         };
 
         Adducts = flare.SupportedAdducts;
+        Normalizations = Enum.GetValues<HighlightNormalization>()
+            .Select(value => new EnumOption<HighlightNormalization>(value))
+            .ToList();
+        foreach (var option in Normalizations) RefreshNormalizationText(option);
         _normalization = ParseEnum(settings.Get(SettingsKeys.Normalization, ""), HighlightNormalization.GlobalMinMax);
         _colormap = ParseEnum(settings.Get(SettingsKeys.Colormap, ""), ColormapType.Viridis);
         _softmaxTemperature = settings.Get(SettingsKeys.SoftmaxTemperature, HighlightCalculator.DefaultTemperature);
@@ -87,9 +91,20 @@ public sealed partial class MainViewModel : ObservableObject
 
     public ObservableCollection<SpectrumRecord> Spectra { get; } = [];
     public IReadOnlyList<string> Adducts { get; }
-    public IReadOnlyList<HighlightNormalization> Normalizations { get; } = Enum.GetValues<HighlightNormalization>();
+    public IReadOnlyList<EnumOption<HighlightNormalization>> Normalizations { get; }
     public IReadOnlyList<ColormapType> Colormaps { get; } = Enum.GetValues<ColormapType>();
-    public string NormalizationDisplay => _localization[$"Normalization{Normalization}"];
+
+    /// <summary>Picker selection for <see cref="Normalizations"/>, mapped onto <see cref="Normalization"/>.</summary>
+    public EnumOption<HighlightNormalization> SelectedNormalization
+    {
+        get => Normalizations.FirstOrDefault(option => option.Value == Normalization) ?? Normalizations[0];
+        set
+        {
+            if (value is null || value.Value == Normalization) return;
+            Normalization = value.Value;
+        }
+    }
+
     public ILocalizationService Localization => _localization;
     public string LanguageDisplay => _localization[Language == "en" ? "English" : "German"];
     public string DisplayFileName => string.IsNullOrWhiteSpace(FileName) ? _localization["NoFile"] : FileName;
@@ -170,7 +185,7 @@ public sealed partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(DisplayFileName));
         OnPropertyChanged(nameof(StructureFormula));
         OnPropertyChanged(nameof(ModelStatusText));
-        OnPropertyChanged(nameof(NormalizationDisplay));
+        foreach (var option in Normalizations) RefreshNormalizationText(option);
         OnPropertyChanged(nameof(ManualSpectrum));
         Candidates.RefreshText();
         ManualSpectrum.RefreshText();
@@ -512,8 +527,12 @@ public sealed partial class MainViewModel : ObservableObject
     {
         _settings.Set(SettingsKeys.Normalization, value.ToString());
         OnPropertyChanged(nameof(IsSoftmax));
+        OnPropertyChanged(nameof(SelectedNormalization));
         RecomputeNormalization();
     }
+
+    private void RefreshNormalizationText(EnumOption<HighlightNormalization> option) =>
+        option.DisplayName = _localization[$"Normalization{option.Value}"];
 
     partial void OnHighlightThresholdChanged(double value)
     {

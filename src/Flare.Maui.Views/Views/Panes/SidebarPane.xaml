@@ -76,7 +76,7 @@
             <VerticalStackLayout Spacing="4">
                 <Label Text="{m:Translate Appearance}" Style="{StaticResource Header}" />
                 <Label Text="{m:Translate Normalization}" Style="{StaticResource Muted}" />
-                <Picker ItemsSource="{Binding Normalizations}" SelectedItem="{Binding Normalization}" ItemDisplayBinding="{Binding NormalizationDisplay}" />
+                <Picker ItemsSource="{Binding Normalizations}" SelectedItem="{Binding SelectedNormalization}" ItemDisplayBinding="{Binding DisplayName}" />
                 <VerticalStackLayout IsVisible="{Binding IsSoftmax}">
                     <Label Style="{StaticResource Muted}">
                         <Label.FormattedText>

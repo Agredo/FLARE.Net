@@ -21,14 +21,17 @@
     <Grid x:Name="RootLayout" RowDefinitions="Auto,*,Auto,Auto,Auto" RowSpacing="8" Padding="12">
 
         <Border Grid.ColumnSpan="2" Padding="16,10">
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
                 <VerticalStackLayout Spacing="2">
                     <Label Text="FLARE" Style="{StaticResource AppTitle}" />
-                    <Label Text="{m:Translate AppTagline}" Style="{StaticResource Muted}" />
+                    <Label Text="{m:Translate AppTagline}" Style="{StaticResource Muted}"
+                           IsVisible="{OnIdiom Phone=False, Default=True}" />
                 </VerticalStackLayout>
-                <Button Grid.Column="1" AutomationId="SettingsButton" Text="{m:Translate Settings}" Style="{StaticResource SecondaryButton}"
+                <Button Grid.Column="1" AutomationId="HelpButton" Text="{m:Translate Help}" Style="{StaticResource SecondaryButton}"
+                        Clicked="OnHelpClicked" VerticalOptions="Center" />
+                <Button Grid.Column="2" AutomationId="SettingsButton" Text="{m:Translate Settings}" Style="{StaticResource SecondaryButton}"
                         Clicked="OnSettingsClicked" VerticalOptions="Center" />
-                <Label Grid.Column="2" Text="{m:Translate SpectrumStructure}" Style="{StaticResource Eyebrow}"
+                <Label Grid.Column="3" Text="{m:Translate SpectrumStructure}" Style="{StaticResource Eyebrow}"
                        VerticalOptions="Center" IsVisible="{OnIdiom Phone=False, Default=True}" />
             </Grid>
         </Border>
