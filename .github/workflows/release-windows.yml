@@ -8,7 +8,7 @@ on:
       version:
         description: Release version (without the leading "v")
         required: true
-        default: '0.1.0'
+        default: '0.1.1'
   push:
     tags:
       - 'v*'
@@ -99,9 +99,10 @@ jobs:
       - name: Upload ${{ matrix.rid }} artifact
         uses: actions/upload-artifact@v7
         with:
-          name: FLARE-${{ matrix.rid }}
+          name: FLARE-${{ steps.version.outputs.version }}-${{ matrix.rid }}
           path: artifacts/FLARE-*-${{ matrix.rid }}.zip
           if-no-files-found: error
+          retention-days: 30
 
   release:
     name: Publish GitHub release

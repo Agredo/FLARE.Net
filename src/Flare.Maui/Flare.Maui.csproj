@@ -11,8 +11,8 @@
     <SingleProject>true</SingleProject>
     <ApplicationTitle>FLARE</ApplicationTitle>
     <ApplicationId>com.flare.maui</ApplicationId>
-    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
-    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.1.1</ApplicationDisplayVersion>
+    <ApplicationVersion>2</ApplicationVersion>
     <WindowsPackageType Condition="$(TargetFramework.Contains('-windows'))">None</WindowsPackageType>
     <!-- A single-file (self-contained) publish has to carry the Windows App SDK runtime itself; a normal
          build keeps using the framework reference so it stays small and debuggable. -->
